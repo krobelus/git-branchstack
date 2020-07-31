@@ -12,8 +12,8 @@ Git ships with [git send-email] which suits this workflow, however, many
 projects prefer to receive patches via pull requests.  To make proposed changes
 easy to review, it is good practise to submit a separate pull request for
 each independent change.  With a branchless workflow, the sole local branch
-typically contains multiple independent changes. To submit those to upstream
-as pull requests, you can create a separate topic branch for each change.
+typically contains multiple independent changes. To submit those upstream
+as pull requests, you need to create a separate topic branch for each change.
 Enter `git branchless`, which creates the desired topic branches without
 requiring you to switch back and forth between branches. This allows you
 to submit small, isolated pull requests while enjoying the benefits of a
@@ -81,7 +81,7 @@ contain the `[topic]` tags. This command lets you edit all commit messages in
 `@{upstream}..`.
 
 ```sh
-	git revise --interactive --edit
+    git revise --interactive --edit
 ```
 
 To push all branches there is a separate script
@@ -90,8 +90,8 @@ as simple as possible.  This is not fully thought out and might change in
 future, but for now, do:
 
 ```sh
-	ln -s $PWD/git-branchless-push ~/bin/
-	git branchless && git branchless-push
+    ln -s $PWD/git-branchless-push ~/bin/
+    git branchless && git branchless-push
 ```
 
 [blog post by Drew DeVault]: <https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html>
