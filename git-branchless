@@ -17,8 +17,8 @@ USAGE = """\
 Create some commits with commit messages starting with `[topic] ` where `topic`
 is any valid branch name.  Then run `git branchless` to create a branch
 for each of those topics among commits in the range `@{upstream}..HEAD`.
-Each topic branch starts at `@{upstream}` and contains all commits with its
-`[topic]` tag.
+Each topic branch is the result of applying the topic's commits on top of
+`@{upstream}`.
 
 For example, if you have a history like
 
@@ -28,8 +28,7 @@ For example, if you have a history like
     [some-independent-fix] Unrelated fix
     [my-awesome-feature] Initial support for feature
 
-Then this command will create two branches: `my-awesome-feature` with two
-commits, and `some-independent-fix` with one commit.
+Then this command will create two branches:
 
     $ git branchless
     Updating refs/heads/my-awesome-feature (ba5e58a => 48a53fec)
