@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 
-from typing import Optional, List
 import argparse
-from subprocess import CalledProcessError, PIPE, run
-import subprocess
+import os
 import re
 import sys
+from typing import Optional, List, Tuple
+from pathlib import Path
+from subprocess import CalledProcessError, PIPE, run
 
 from gitrevise.utils import EditorError
 from gitrevise.odb import Repository
 from gitrevise.merge import rebase, MergeConflict
 
-NAME = 'git-branchless'
+NAME = "git-branchless"
 
 USAGE = """\
 Create some commits with commit messages starting with `[topic] ` where `topic`
@@ -52,13 +53,14 @@ it is usually a good idea to avoid this by using the same topic for dependent
 commits.
 """
 
-UPSTREAM = "@{upstream}"
 
-
-def update_branches_from_HEAD(repo, args):
+def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> None:
     log = []
-    patches = (repo.git("log", "--reverse", "--oneline",
-                        f"{UPSTREAM}..HEAD").decode().splitlines())
+    patches = (
+        repo.git("log", "--reverse", "--oneline", f"{upstream}..HEAD")
+        .decode()
+        .splitlines()
+    )
     current_topic = None
     for line in patches:
         match = re.match(r"^(\S*)(?: \[([^\]]*)\])?", line)
@@ -72,7 +74,7 @@ def update_branches_from_HEAD(repo, args):
             continue
 
         # [] reuses the previous topic
-        if topic != '':
+        if topic != "":
             current_topic = topic
 
         if current_topic:
@@ -80,13 +82,15 @@ def update_branches_from_HEAD(repo, args):
 
     topics = sorted(list({l[1] for l in log}))
 
+    assert (
+        current_branch not in topics
+    ), f"Refusing to overwrite current branch {current_branch}"
+
     if args.topics:
-        print('\n'.join(topics))
+        print("\n".join(topics))
         sys.exit(0)
 
-    current_branch = repo.git("symbolic-ref", "--short", "HEAD").decode()
-    assert current_branch not in topics
-    upstream_id = repo.git("rev-parse", UPSTREAM).decode()
+    upstream_id = repo.git("rev-parse", upstream).decode()
     for topic in topics:
         head = repo.get_commit(upstream_id)
         new_messages = []
@@ -95,36 +99,39 @@ def update_branches_from_HEAD(repo, args):
                 continue
             patch = repo.get_commit(commit)
             head = rebase(patch, head)
-            for prefix in ('[] '), f"[{topic}] ":
-                prefix = bytes(prefix, 'utf8')
+            for prefix in ("[] "), f"[{topic}] ":
+                prefix = bytes(prefix, "utf8")
                 if head.message.startswith(prefix):
-                    head = head.update(message=patch.message[len(prefix):])
+                    head = head.update(message=patch.message[len(prefix) :])
                     break
             new_messages += [head.message]
-        if not repo.git('rev-parse', '--revs-only', topic):
-            repo.git("branch", topic, UPSTREAM)
+        if not repo.git("rev-parse", "--revs-only", topic):
+            repo.git("branch", topic, upstream)
         topic_ref = repo.get_commit_ref(topic)
 
-        old_commits = repo.git("log", "--reverse", "--oneline", "--format=%H",
-                               f"{UPSTREAM}..{topic}").decode().splitlines()
-        old_messages = [
-            repo.get_commit(commit).message for commit in old_commits
-        ]
+        old_commits = (
+            repo.git(
+                "log", "--reverse", "--oneline", "--format=%H", f"{upstream}..{topic}"
+            )
+            .decode()
+            .splitlines()
+        )
+        old_messages = [repo.get_commit(commit).message for commit in old_commits]
 
-        if (head.tree() == topic_ref.target.tree()
-                and new_messages == old_messages):
+        if head.tree() == topic_ref.target.tree() and new_messages == old_messages:
             continue
 
         topic_oid = topic_ref.target.oid
         print(f"Updating {topic_ref.name} ({topic_oid} => {head.oid})")
-        topic_ref.update(head, "git-branchless rewrite")
+        topic_ref.update(head, f"{NAME} rewrite")
 
     for topic in topics:
         print()
         print(topic)
-        for line in repo.git('log', '--oneline',
-                             f'{UPSTREAM}..{topic}').decode().splitlines():
-            print('\t', line)
+        for line in (
+            repo.git("log", "--oneline", f"{upstream}..{topic}").decode().splitlines()
+        ):
+            print("\t", line)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -135,20 +142,41 @@ def parser() -> argparse.ArgumentParser:
     )
 
     p.add_argument(
-        "--topics",
-        "-t",
-        action="store_true",
-        help="print topic branch names and exit",
+        "--topics", "-t", action="store_true", help="print topic branch names and exit",
     )
 
     return p
+
+
+def config(repo, key) -> str:
+    return repo.git("config", key).decode().strip()
+
+
+def branch_and_upstream(repo: Repository) -> Tuple[str, str]:
+    root = Path(repo.git("rev-parse", "--show-toplevel").decode().strip())
+    head_name = root / ".git/rebase-merge/head-name"
+    if not os.path.exists(head_name):
+        upstream = "@{upstream}"
+        branch = repo.git("symbolic-ref", "--short", "HEAD").decode()
+        return branch, upstream
+
+    with open(head_name) as f:
+        branch = os.path.basename(f.read().strip())
+    try:
+        remote = config(repo, f"branch.{branch}.remote")
+    except:
+        remote = "origin"
+    upstream = f"{remote}/{branch}"
+
+    return branch, upstream
 
 
 def main(argv: Optional[List[str]] = None):
     args = parser().parse_args(argv)
     try:
         with Repository() as repo:
-            update_branches_from_HEAD(repo, args)
+            branch, upstream = branch_and_upstream(repo)
+            branch_out_commits_since_upstream(repo, branch, upstream, args)
     except CalledProcessError as err:
         print(f"subprocess exited with non-zero status: {err.returncode}")
         sys.exit(1)

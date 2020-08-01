@@ -83,6 +83,8 @@ contain the `[topic]` tags. This command lets you edit all commit messages in
 $ git revise --interactive --edit
 ```
 
+Like `git revise`, you can use `git branchless` during an interactive rebase.
+
 To push all branches there is a separate script
 [git-branchless-push](./git-branchless-push), to keep `git branchless`
 as simple as possible.  This is not fully thought out and might change in
