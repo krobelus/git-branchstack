@@ -91,6 +91,11 @@ $ ln -s $PWD/git-branchless-push ~/bin/
 $ git branchless && git branchless-push
 ```
 
+## Contributing
+
+You can send feedback to the [git-branchless mailing
+list](https://lists.sr.ht/~krobelus/git-branchless).
+
 [blog post by Drew DeVault]: <https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html>
 [Git]: <https://git-scm.com/>
 [git revise]: <https://github.com/mystor/git-revise/>
