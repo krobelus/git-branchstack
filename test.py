@@ -30,20 +30,21 @@ def test_branch_out_commits_since_upstream(tmp_path) -> None:
         repo.git("add", b)
         repo.git("commit", "--message", "[b] b1")
 
+        repo.git("commit", "--all", "--allow-empty", "--message", "WIP commit")
+
         write(a, "second change in a\n")
         repo.git("commit", "--all", "--message", "[a] a2")
 
         write(a, "third change in a\n")
         repo.git("commit", "--all", "--message", "[] a3")
 
-        repo.git("commit", "--all", "--allow-empty", "--message", "WIP commit")
         repo.git("commit", "--all", "--allow-empty", "--message", "another WIP commit")
 
         expected = """\
 *  (HEAD -> master) another WIP commit
-*  WIP commit
 *  [] a3
 *  [a] a2
+*  WIP commit
 *  [b] b1
 *  [a] a1
 *  (origin/master) master: latest master
@@ -62,9 +63,9 @@ def test_branch_out_commits_since_upstream(tmp_path) -> None:
 | *  (b) b1
 |/  
 | *  (HEAD -> master) another WIP commit
-| *  WIP commit
 | *  [] a3
 | *  [a] a2
+| *  WIP commit
 | *  [b] b1
 | *  [a] a1
 |/  
