@@ -15,9 +15,9 @@ changes easy to review, you'll want to submit a separate pull request for
 each independent change.  With a branchless workflow, the sole local branch
 typically contains multiple independent changes. To submit those upstream as
 pull requests, you need to create a separate topic branch for each change.
-`git branchless` creates the desired topic branches without requiring
+Running `git branchless` creates the desired topic branches without requiring
 you to switch back and forth between branches. This allows you to submit
-small, isolated pull requests while enjoying the benefits of a branchless
+small, independent pull requests while enjoying the benefits of a branchless
 workflow. After making any changes to your branch (for example by addressing
 review comments or rebasing on upstream changes) you can trivially update
 the generated topic branches: just re-run `git branchless`.
@@ -25,8 +25,7 @@ the generated topic branches: just re-run `git branchless`.
 ## Installation
 
 1. Make sure you have Python 3.6 or higher.
-2. Install [git revise]. This is currently used as a library to perform merges
-   in-memory.
+2. Install [git revise]. This is used to create commits without touching the worktree.
 3. Add `git branchless` to your `$PATH`:
 
    ```sh
