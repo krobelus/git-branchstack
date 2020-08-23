@@ -84,7 +84,8 @@ def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> N
     ), f"Refusing to overwrite current branch {current_branch}"
 
     if args.topics:
-        print("\n".join(topics))
+        if topics:
+            print("\n".join(topics))
         sys.exit(0)
 
     upstream_id = repo.git("rev-parse", upstream).decode()
