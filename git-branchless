@@ -73,14 +73,14 @@ def parse_log(repo, upstream) -> List[Tuple[str, str, str]]:
         if match is None:
             continue
 
-        commit, topic, message = match.groups()
+        commit, topic, subject = match.groups()
 
         # An empty topic means to reuse the previous topic.
         if topic != "":
             current_topic = topic
 
         if current_topic:
-            parsed_log += [(commit, current_topic, message)]
+            parsed_log += [(commit, current_topic, subject)]
 
     return parsed_log
 
@@ -102,13 +102,16 @@ def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> N
     for topic in topics:
         head = repo.get_commit(upstream_id)
         new_messages = []
-        for commit, t, message in parsed_log:
+        for commit, t, subject in parsed_log:
             if t != topic:
                 continue
             patch = repo.get_commit(commit)
+            body = b'\n'.join(patch.message.split(b'\n', maxsplit=1)[1:])
+            message = subject.encode() + b'\n' + body
+
             head = rebase(patch, head)
-            if head.message != message:
-                head = head.update(message=message.encode())
+            head = head.update(message=message)
+
             new_messages += [head.message]
         if not repo.git("rev-parse", "--revs-only", topic):
             repo.git("branch", topic, upstream)
