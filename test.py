@@ -15,6 +15,7 @@ def test_branch_out_commits_since_upstream(tmp_path) -> None:
     assert Popen(("git", "init", "--bare", remote_path)).wait() == 0
 
     with Repository(repo_path) as repo:
+        repo.git("config", "branchless.subjectRegex", gitbranchless.SUBJECT_REGEX)
         repo.git("commit", "--allow-empty", "--message", "master: initial commit")
         repo.git("commit", "--allow-empty", "--message", "master: latest master")
         repo.git("remote", "add", "origin", remote_path)
@@ -111,6 +112,33 @@ def test_branch_and_upstream(tmp_path) -> None:
         branch, upstream = gitbranchless.branch_and_upstream(repo)
         assert branch == test_branch
         assert upstream == f"{test_remote}/{test_branch}"
+
+
+def test_subjectRegex(tmp_path) -> None:
+    repo_path = tmp_path / "repo"
+    assert Popen(("git", "init", repo_path)).wait() == 0
+    remote_path = tmp_path / "repo.git"
+    assert Popen(("git", "init", "--bare", remote_path)).wait() == 0
+
+    with Repository(repo_path) as repo:
+        repo.git("config", "branchless.subjectRegex", r"(\S*):\s*(.*)")
+
+        repo.git("commit", "--allow-empty", "--message", "master: initial commit")
+        repo.git("commit", "--allow-empty", "--message", "master: latest master")
+        repo.git("remote", "add", "origin", remote_path)
+        repo.git("push", "--set-upstream", "origin", "master")
+        repo.git("commit", "--allow-empty", "--message", "a: a1")
+        repo.git("commit", "--allow-empty", "--message", "b: b1")
+        repo.git("commit", "--allow-empty", "--message", ": b2")
+        repo.git("commit", "--allow-empty", "--message", "a: a2")
+
+        parsed_log = gitbranchless.parse_log(repo, "@{upstream}")
+        assert tuple((topic, message) for commit_id, topic, message in parsed_log) == (
+            ("a", "a1"),
+            ("b", "b1"),
+            ("b", "b2"),
+            ("a", "a2"),
+        )
 
 
 def graph(repo) -> str:

@@ -53,31 +53,41 @@ it is usually a good idea to avoid this by using the same topic for dependent
 commits.
 """
 
+SUBJECT_REGEX = r"\[([^\]]*)\]\s*(.*)"
 
-def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> None:
-    log = []
+
+def parse_log(repo, upstream) -> List[Tuple[str, str, str]]:
+    parsed_log = []
     patches = (
         repo.git("log", "--reverse", "--oneline", f"{upstream}..HEAD")
         .decode()
         .splitlines()
     )
     current_topic = None
+    try:
+        subject_regex = config(repo, f"branchless.subjectRegex")
+    except CalledProcessError:
+        subject_regex = SUBJECT_REGEX
     for line in patches:
-        match = re.match(r"^(\S*) \[([^\]]*)\]", line)
+        match = re.match(r"^(\S*) " + subject_regex, line)
         if match is None:
             continue
 
-        commit = match.group(1)
-        topic = match.group(2)
+        commit, topic, message = match.groups()
 
-        # [] reuses the previous topic
+        # An empty topic means to reuse the previous topic.
         if topic != "":
             current_topic = topic
 
         if current_topic:
-            log += [(commit, current_topic)]
+            parsed_log += [(commit, current_topic, message)]
 
-    topics = sorted(list({l[1] for l in log}))
+    return parsed_log
+
+
+def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> None:
+    parsed_log = parse_log(repo, upstream)
+    topics = sorted(list({l[1] for l in parsed_log}))
 
     assert (
         current_branch not in topics
@@ -92,16 +102,13 @@ def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> N
     for topic in topics:
         head = repo.get_commit(upstream_id)
         new_messages = []
-        for commit, t in log:
+        for commit, t, message in parsed_log:
             if t != topic:
                 continue
             patch = repo.get_commit(commit)
             head = rebase(patch, head)
-            for prefix in ("[] "), f"[{topic}] ":
-                prefix = bytes(prefix, "utf8")
-                if head.message.startswith(prefix):
-                    head = head.update(message=patch.message[len(prefix) :])
-                    break
+            if head.message != message:
+                head = head.update(message=message.encode())
             new_messages += [head.message]
         if not repo.git("rev-parse", "--revs-only", topic):
             repo.git("branch", topic, upstream)
