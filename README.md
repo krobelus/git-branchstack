@@ -76,7 +76,7 @@ commits.
 
 You can use [git revise] to efficiently modify your commit messages to
 contain the `[topic]` tags. This command lets you edit all commit messages in
-`@{upstream}..`.
+`@{upstream}..HEAD`.
 
 ```sh
 $ git revise --interactive --edit
