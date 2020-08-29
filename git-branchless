@@ -106,8 +106,8 @@ def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> N
             if t != topic:
                 continue
             patch = repo.get_commit(commit)
-            body = b'\n'.join(patch.message.split(b'\n', maxsplit=1)[1:])
-            message = subject.encode() + b'\n' + body
+            body = b"\n".join(patch.message.split(b"\n", maxsplit=1)[1:])
+            message = subject.encode() + b"\n" + body
 
             head = rebase(patch, head)
             head = head.update(message=message)
@@ -150,7 +150,10 @@ def parser() -> argparse.ArgumentParser:
     )
 
     p.add_argument(
-        "--topics", "-t", action="store_true", help="print topic branch names and exit",
+        "--topics",
+        "-t",
+        action="store_true",
+        help="print topic branch names and exit",
     )
 
     return p

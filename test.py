@@ -2,6 +2,7 @@
 
 from subprocess import Popen
 from gitrevise.odb import Repository
+from pathlib import Path
 
 import importlib
 
@@ -9,24 +10,13 @@ gitbranchless = importlib.import_module("git-branchless")
 
 
 def test_branch_out_commits_since_upstream(tmp_path) -> None:
-    repo_path = tmp_path / "repo"
-    assert Popen(("git", "init", repo_path)).wait() == 0
-    remote_path = tmp_path / "repo.git"
-    assert Popen(("git", "init", "--bare", remote_path)).wait() == 0
-
-    with Repository(repo_path) as repo:
-        repo.git("config", "branchless.subjectRegex", gitbranchless.SUBJECT_REGEX)
-        repo.git("commit", "--allow-empty", "--message", "master: initial commit")
-        repo.git("commit", "--allow-empty", "--message", "master: latest master")
-        repo.git("remote", "add", "origin", remote_path)
-        repo.git("push", "--set-upstream", "origin", "master")
-
-        a = repo_path / "a"
+    with new_repo(tmp_path) as repo:
+        a = repo.workdir / "a"
         write(a, "first change in a\n")
         repo.git("add", a)
         repo.git("commit", "--message", "[a] a1")
 
-        b = repo_path / "b"
+        b = repo.workdir / "b"
         write(b, "created b\n")
         repo.git("add", b)
         repo.git("commit", "--message", "[b] b1")
@@ -115,18 +105,9 @@ def test_branch_and_upstream(tmp_path) -> None:
 
 
 def test_subjectRegex(tmp_path) -> None:
-    repo_path = tmp_path / "repo"
-    assert Popen(("git", "init", repo_path)).wait() == 0
-    remote_path = tmp_path / "repo.git"
-    assert Popen(("git", "init", "--bare", remote_path)).wait() == 0
-
-    with Repository(repo_path) as repo:
+    with new_repo(tmp_path) as repo:
         repo.git("config", "branchless.subjectRegex", r"(\S*):\s*(.*)")
 
-        repo.git("commit", "--allow-empty", "--message", "master: initial commit")
-        repo.git("commit", "--allow-empty", "--message", "master: latest master")
-        repo.git("remote", "add", "origin", remote_path)
-        repo.git("push", "--set-upstream", "origin", "master")
         repo.git("commit", "--allow-empty", "--message", "a: a1")
         repo.git("commit", "--allow-empty", "--message", "b: b1")
         repo.git("commit", "--allow-empty", "--message", ": b2")
@@ -141,8 +122,28 @@ def test_subjectRegex(tmp_path) -> None:
         )
 
 
+def new_repo(path: Path) -> Repository:
+    repo_path = path / "repo"
+    assert Popen(("git", "init", repo_path)).wait() == 0
+    remote_path = path / "repo.git"
+    assert Popen(("git", "init", "--bare", remote_path)).wait() == 0
+    repo = Repository(repo_path)
+    repo.git("commit", "--allow-empty", "--message", "master: initial commit")
+    repo.git("commit", "--allow-empty", "--message", "master: latest master")
+    repo.git("remote", "add", "origin", remote_path)
+    repo.git("push", "--set-upstream", "origin", "master")
+    repo.git("config", "branchless.subjectRegex", gitbranchless.SUBJECT_REGEX)
+    return repo
+
+
 def graph(repo) -> str:
-    return repo.git("log", "--graph", "--oneline", "--all", "--format=%d %s",).decode()
+    return repo.git(
+        "log",
+        "--graph",
+        "--oneline",
+        "--all",
+        "--format=%d %s",
+    ).decode()
 
 
 def write(filename, contents) -> None:
