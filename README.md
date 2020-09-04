@@ -72,6 +72,10 @@ If there is a merge conflict, you will be prompted to resolve it.  However,
 it is usually a good idea to avoid this by using the same topic for dependent
 commits.
 
+You can specify dependencies between branches for example use
+`[child:parent1:parent2]` to base `child` off both `parent1` and `parent2`.
+Please ensure that dependencies appear before users in your branch.
+
 ## Tips
 
 You can use [git revise] to efficiently modify your commit messages to

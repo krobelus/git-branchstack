@@ -106,7 +106,7 @@ def test_branch_and_upstream(tmp_path) -> None:
 
 def test_subjectRegex(tmp_path) -> None:
     with new_repo(tmp_path) as repo:
-        repo.git("config", "branchless.subjectRegex", r"(\S*):\s*(.*)")
+        repo.git("config", "branchless.subjectRegex", r"(\S*)():\s*(.*)")
 
         repo.git("commit", "--allow-empty", "--message", "a: a1")
         repo.git("commit", "--allow-empty", "--message", "b: b1")
@@ -114,11 +114,32 @@ def test_subjectRegex(tmp_path) -> None:
         repo.git("commit", "--allow-empty", "--message", "a: a2")
 
         parsed_log = gitbranchless.parse_log(repo, "@{upstream}")
-        assert tuple((topic, message) for commit_id, topic, message in parsed_log) == (
+        assert tuple(
+            (topic, message) for commit_id, topic, _parents, message in parsed_log
+        ) == (
             ("a", "a1"),
             ("b", "b1"),
             ("b", "b2"),
             ("a", "a2"),
+        )
+
+
+def test_parents(tmp_path) -> None:
+    with new_repo(tmp_path) as repo:
+        repo.git("commit", "--allow-empty", "--message", "[c] c1")
+        repo.git("commit", "--allow-empty", "--message", "[c] c2")
+        repo.git("commit", "--allow-empty", "--message", "[b] b")
+        repo.git("commit", "--allow-empty", "--message", "[a:b:c] a")
+
+        parsed_log = gitbranchless.parse_log(repo, "@{upstream}")
+        assert tuple(
+            (topic, parents, message)
+            for commit_id, topic, parents, message in parsed_log
+        ) == (
+            ("c", [], "c1"),
+            ("c", [], "c2"),
+            ("b", [], "b"),
+            ("a", ["b", "c"], "a"),
         )
 
 
