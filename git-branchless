@@ -94,8 +94,37 @@ def parse_log(repo, upstream) -> List[Tuple[str, str, str]]:
 
 def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> None:
     parsed_log = parse_log(repo, upstream)
-    topics = sorted(list({l[1] for l in parsed_log}))
-    parent_topics = {l[1]: [k for k in l[2]] for l in parsed_log}
+
+    def topic_index(topic):
+        for i in range(len(parsed_log)):
+            if parsed_log[i][1] == topic:
+                return i
+        print(f"Warning: ignoring missing branch '{topic}'.")
+        return -1
+
+    # Sort topics by their first commit.
+    topics = sorted(list({l[1] for l in parsed_log}), key=topic_index)
+
+    # Dependencies for each topic.
+    parent_topics = {
+        topic: sorted(
+            (
+                parent
+                for entry in parsed_log
+                for parent in entry[2]
+                if topic_index(parent) != -1
+                if entry[1] == topic
+            ),
+            key=topic_index,
+        )
+        for topic in topics
+    }
+
+    tmp = set()
+    for commit, topic, _, _ in parsed_log:
+        for parent in parent_topics.get(topic, ()):
+            assert parent in tmp
+        tmp.add(topic)
 
     assert (
         current_branch not in topics
@@ -110,7 +139,7 @@ def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> N
     for topic in topics:
         head = repo.get_commit(upstream_id)
         new_messages = []
-        for parent_topic in parent_topics.get(topic, []):
+        for parent_topic in parent_topics.get(topic, ()):
             for commit, t, _, _ in parsed_log:
                 if t != parent_topic:
                     continue
