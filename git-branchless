@@ -6,7 +6,7 @@ import re
 import sys
 from typing import Optional, List, Tuple
 from pathlib import Path
-from subprocess import CalledProcessError, PIPE, run
+from subprocess import CalledProcessError, PIPE
 
 from gitrevise.utils import EditorError
 from gitrevise.odb import Repository
@@ -57,21 +57,20 @@ You can specify dependencies between branches for example use
 Please ensure that dependencies appear before users in your branch.
 """
 
-SUBJECT_REGEX = r"\[([^\]:]*)(?::([^\]]*))*\]\s*(.*)"
+SUBJECT_REGEX = rb"\[([^\]:]*)(?::([^\]]*))*\]\s*(.*)"
 
 
-def parse_log(repo, upstream) -> List[Tuple[str, str, str]]:
+def parse_log(repo, forkpoint) -> List[Tuple[str, str, str]]:
     parsed_log = []
     patches = (
-        repo.git("log", "--reverse", "--oneline", f"{upstream}..HEAD")
+        repo.git("log", "--reverse", "--oneline", f"{forkpoint}..HEAD")
         .decode()
         .splitlines()
     )
     current_topic = None
-    try:
-        subject_regex = config(repo, f"branchless.subjectRegex")
-    except CalledProcessError:
-        subject_regex = SUBJECT_REGEX
+    subject_regex = repo.config(
+        f"branchless.subjectRegex", default=SUBJECT_REGEX
+    ).decode()
     for line in patches:
         match = re.match(r"^(\S*) " + subject_regex, line)
         if match is None:
@@ -92,8 +91,8 @@ def parse_log(repo, upstream) -> List[Tuple[str, str, str]]:
     return parsed_log
 
 
-def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> None:
-    parsed_log = parse_log(repo, upstream)
+def branch_out_commits_since_forkpoint(repo, current_branch, forkpoint, args) -> None:
+    parsed_log = parse_log(repo, forkpoint)
 
     def topic_index(topic):
         for i in range(len(parsed_log)):
@@ -135,9 +134,9 @@ def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> N
             print("\n".join(topics))
         sys.exit(0)
 
-    upstream_id = repo.git("rev-parse", upstream).decode()
+    forkpoint_id = repo.git("rev-parse", forkpoint).decode()
     for topic in topics:
-        head = repo.get_commit(upstream_id)
+        head = repo.get_commit(forkpoint_id)
         new_messages = []
         for parent_topic in parent_topics.get(topic, ()):
             for commit, t, _, _ in parsed_log:
@@ -157,12 +156,12 @@ def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> N
 
             new_messages += [head.message]
         if not repo.git("rev-parse", "--revs-only", topic):
-            repo.git("branch", topic, upstream)
+            repo.git("branch", topic, forkpoint)
         topic_ref = repo.get_commit_ref(topic)
 
         old_commits = (
             repo.git(
-                "log", "--reverse", "--oneline", "--format=%H", f"{upstream}..{topic}"
+                "log", "--reverse", "--oneline", "--format=%H", f"{forkpoint}..{topic}"
             )
             .decode()
             .splitlines()
@@ -180,7 +179,7 @@ def branch_out_commits_since_upstream(repo, current_branch, upstream, args) -> N
         print()
         print(topic)
         for line in (
-            repo.git("log", "--oneline", f"{upstream}..{topic}").decode().splitlines()
+            repo.git("log", "--oneline", f"{forkpoint}..{topic}").decode().splitlines()
         ):
             print("\t", line)
 
@@ -202,35 +201,33 @@ def parser() -> argparse.ArgumentParser:
     return p
 
 
-def config(repo, key) -> str:
-    return repo.git("config", key).decode().strip()
-
-
-def branch_and_upstream(repo: Repository) -> Tuple[str, str]:
+def branch_and_forkpoint(repo: Repository) -> Tuple[str, str]:
     root = Path(repo.git("rev-parse", "--show-toplevel").decode().strip())
     head_name = root / ".git/rebase-merge/head-name"
-    if not os.path.exists(head_name):
-        upstream = "@{upstream}"
+
+    if os.path.exists(head_name):
+        with open(head_name) as f:
+            branch = os.path.basename(f.read().strip())
+        remote = repo.config(
+            f"branch.{branch}.pushRemote",
+            default=repo.config("remote.pushDefault", default=b"origin"),
+        ).decode()
+        forkpoint = repo.git(
+            "merge-base", "--fork-point", branch, f"{remote}/{branch}"
+        ).decode()
+    else:
         branch = repo.git("symbolic-ref", "--short", "HEAD").decode()
-        return branch, upstream
+        forkpoint = repo.git("merge-base", branch, "@{upstream}").decode()
 
-    with open(head_name) as f:
-        branch = os.path.basename(f.read().strip())
-    try:
-        remote = config(repo, f"branch.{branch}.remote")
-    except:
-        remote = "origin"
-    upstream = f"{remote}/{branch}"
-
-    return branch, upstream
+    return branch, forkpoint
 
 
 def main(argv: Optional[List[str]] = None):
     args = parser().parse_args(argv)
     try:
         with Repository() as repo:
-            branch, upstream = branch_and_upstream(repo)
-            branch_out_commits_since_upstream(repo, branch, upstream, args)
+            branch, forkpoint = branch_and_forkpoint(repo)
+            branch_out_commits_since_forkpoint(repo, branch, forkpoint, args)
     except CalledProcessError as err:
         print(f"subprocess exited with non-zero status: {err.returncode}")
         sys.exit(1)
