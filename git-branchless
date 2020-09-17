@@ -4,7 +4,7 @@ import argparse
 import os
 import re
 import sys
-from typing import Optional, List, Tuple
+from typing import Dict, Optional, List, Set, Tuple
 from pathlib import Path
 from subprocess import CalledProcessError, PIPE
 
@@ -91,6 +91,19 @@ def parse_log(repo, forkpoint) -> List[Tuple[str, str, str]]:
     return parsed_log
 
 
+def transitive_dependencies(
+    depgraph: Dict[str, List[str]], node: str, visited: Set[str]
+) -> List[str]:
+    if node in visited:
+        return []
+    visited.add(node)
+    return [node] + [
+        n
+        for x in depgraph.get(node, ())
+        for n in transitive_dependencies(depgraph, x, visited)
+    ]
+
+
 def branch_out_commits_since_forkpoint(repo, current_branch, forkpoint, args) -> None:
     parsed_log = parse_log(repo, forkpoint)
 
@@ -105,7 +118,7 @@ def branch_out_commits_since_forkpoint(repo, current_branch, forkpoint, args) ->
     topics = sorted(list({l[1] for l in parsed_log}), key=topic_index)
 
     # Dependencies for each topic.
-    parent_topics = {
+    parent_topics: Dict[str, List[str]] = {
         topic: sorted(
             (
                 parent
@@ -138,7 +151,9 @@ def branch_out_commits_since_forkpoint(repo, current_branch, forkpoint, args) ->
     for topic in topics:
         head = repo.get_commit(forkpoint_id)
         new_messages = []
-        for parent_topic in parent_topics.get(topic, ()):
+        for parent_topic in transitive_dependencies(parent_topics, topic, set())[1:][
+            ::-1
+        ]:
             for commit, t, _, _ in parsed_log:
                 if t != parent_topic:
                     continue
