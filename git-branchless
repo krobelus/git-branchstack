@@ -228,7 +228,7 @@ def branch_and_forkpoint(repo: Repository) -> Tuple[str, str]:
             default=repo.config("remote.pushDefault", default=b"origin"),
         ).decode()
         forkpoint = repo.git(
-            "merge-base", "--fork-point", branch, f"{remote}/{branch}"
+            "merge-base", "--fork-point", "HEAD", f"{remote}/{branch}"
         ).decode()
     else:
         branch = repo.git("symbolic-ref", "--short", "HEAD").decode()
