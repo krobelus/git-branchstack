@@ -151,9 +151,8 @@ def branch_out_commits_since_forkpoint(repo, current_branch, forkpoint, args) ->
     for topic in topics:
         head = repo.get_commit(forkpoint_id)
         new_messages = []
-        for parent_topic in transitive_dependencies(parent_topics, topic, set())[1:][
-            ::-1
-        ]:
+        deps = transitive_dependencies(parent_topics, topic, set())[1:]
+        for parent_topic in deps:
             for commit, t, _, _ in parsed_log:
                 if t != parent_topic:
                     continue
