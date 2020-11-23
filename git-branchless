@@ -169,7 +169,7 @@ def branch_out_commits_since_forkpoint(repo, current_branch, forkpoint, args) ->
             head = head.update(message=message)
 
             new_messages += [head.message]
-        if not repo.git("rev-parse", "--revs-only", topic):
+        if not repo.git("rev-parse", "--revs-only", topic) or repo.git("cat-file", "-t", topic).decode() != "commit":
             repo.git("branch", topic, forkpoint)
         topic_ref = repo.get_commit_ref(topic)
 
