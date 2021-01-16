@@ -25,8 +25,8 @@ For example, if you have a history like
 
     $ git log @{upstream}.. --format=%s
     WIP unfinished commit
-    [my-awesome-feature] Some more work on feature
     [some-unrelated-fix] Unrelated fix
+    [my-awesome-feature] Some more work on feature
     [my-awesome-feature] Initial support for feature
 
 Then this command will create two branches:
@@ -59,11 +59,14 @@ Please ensure that dependencies appear before users in your branch.
 
 SUBJECT_REGEX = rb"\[([^\]:]*)(?::([^\]]*))*\]\s*(.*)"
 
+CommitEntries = List[Tuple[str, str, str]]
 
-def parse_log(repo, forkpoint) -> List[Tuple[str, str, str]]:
-    parsed_log = []
+
+def parse_log(repo, base_commit) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
+    commit_entries = []
+    dependency_graph: Dict[str, Set[str]] = {}
     patches = (
-        repo.git("log", "--reverse", "--oneline", f"{forkpoint}..HEAD")
+        repo.git("log", "--reverse", "--oneline", f"{base_commit}..HEAD")
         .decode()
         .splitlines()
     )
@@ -85,80 +88,78 @@ def parse_log(repo, forkpoint) -> List[Tuple[str, str, str]]:
         if topic != "":
             current_topic = topic
 
-        if current_topic:
-            parsed_log += [(commit, current_topic, parent_topics, subject)]
+        if not current_topic:
+            continue
 
-    return parsed_log
+        commit_entries += [(commit, current_topic, subject)]
+
+        if current_topic not in dependency_graph:
+            dependency_graph[current_topic] = set()
+        if parent_topics:
+            dependency_graph[current_topic].update(parent_topics)
+
+    return commit_entries, dependency_graph
 
 
-def transitive_dependencies(
-    depgraph: Dict[str, List[str]], node: str, visited: Set[str]
-) -> List[str]:
+def transitive_dependencies(depgraph: Dict[str, Set[str]], node: str) -> Set[str]:
+    visited: Set[str] = set()
+    transitive_dependencies_rec(depgraph, node, visited)
+    return visited
+
+
+def transitive_dependencies_rec(
+    depgraph: Dict[str, Set[str]], node: str, visited: Set[str]
+) -> None:
     if node in visited:
-        return []
+        return
     visited.add(node)
-    return [node] + [
-        n
-        for x in depgraph.get(node, ())
-        for n in transitive_dependencies(depgraph, x, visited)
-    ]
+    for x in depgraph.get(node, ()):
+        transitive_dependencies_rec(depgraph, x, visited)
 
 
-def branch_out_commits_since_forkpoint(repo, current_branch, forkpoint, args) -> None:
-    parsed_log = parse_log(repo, forkpoint)
+def create_branches(repo, current_branch, base_commit, topics_to_create=None) -> None:
+    commit_entries, dependency_graph = parse_log(repo, base_commit)
 
-    def topic_index(topic):
-        for i in range(len(parsed_log)):
-            if parsed_log[i][1] == topic:
+    def by_first_commit_on_topic(commit_entry):
+        (commit, topic, subject) = commit_entry
+        for i in range(len(commit_entries)):
+            if commit_entries[i][1] == topic:
                 return i
-        print(f"Warning: ignoring missing branch '{topic}'.")
         return -1
 
-    # Sort topics by their first commit.
-    topics = sorted(list({l[1] for l in parsed_log}), key=topic_index)
+    commit_entries.sort(key=by_first_commit_on_topic)
+    topics = {commit_entry[1]: None for commit_entry in commit_entries}
+    all_topics = set(topics)
+    topic_set = all_topics
 
-    # Dependencies for each topic.
-    parent_topics: Dict[str, List[str]] = {
-        topic: sorted(
-            (
-                parent
-                for entry in parsed_log
-                for parent in entry[2]
-                if topic_index(parent) != -1
-                if entry[1] == topic
-            ),
-            key=topic_index,
-        )
-        for topic in topics
-    }
+    if topics_to_create:
+        topic_set = set()
+        for topic in topics_to_create:
+            topic_set.add(topic)
+        topics = [t for t in topics if t in topic_set]
 
-    tmp = set()
-    for commit, topic, _, _ in parsed_log:
-        for parent in parent_topics.get(topic, ()):
-            assert parent in tmp
-        tmp.add(topic)
+    for child in topics:
+        for parent in dependency_graph[child]:
+            if parent not in all_topics:
+                print(f"Warning: topic '{child}' depends on missing topic '{parent}'.")
 
-    assert (
-        current_branch not in topics
+    assert current_branch not in set(
+        topics
     ), f"Refusing to overwrite current branch {current_branch}"
 
-    if args.topics:
-        if topics:
-            print("\n".join(topics))
-        sys.exit(0)
-
-    forkpoint_id = repo.git("rev-parse", forkpoint).decode()
+    base_commit_id = repo.git("rev-parse", base_commit).decode()
     for topic in topics:
-        head = repo.get_commit(forkpoint_id)
+        head = repo.get_commit(base_commit_id)
+        deps = transitive_dependencies(dependency_graph, topic)
         new_messages = []
-        deps = transitive_dependencies(parent_topics, topic, set())[1:]
-        for parent_topic in deps:
-            for commit, t, _, _ in parsed_log:
-                if t != parent_topic:
-                    continue
-                patch = repo.get_commit(commit)
-                head = rebase(patch, head)
-        for commit, t, _parent_topics, subject in parsed_log:
+        for commit, t, commit_subject in commit_entries:
+            if t not in deps or t == topic:
+                continue
+            patch = repo.get_commit(commit)
+            match = None
+            new_messages += [patch.message]
+            head = rebase(patch, head)
+        for commit, t, subject in commit_entries:
             if t != topic:
                 continue
             patch = repo.get_commit(commit)
@@ -169,13 +170,20 @@ def branch_out_commits_since_forkpoint(repo, current_branch, forkpoint, args) ->
             head = head.update(message=message)
 
             new_messages += [head.message]
-        if not repo.git("rev-parse", "--revs-only", topic) or repo.git("cat-file", "-t", topic).decode() != "commit":
-            repo.git("branch", topic, forkpoint)
+        if (
+            not repo.git("rev-parse", "--revs-only", topic)
+            or repo.git("cat-file", "-t", topic).decode() != "commit"
+        ):
+            repo.git("branch", topic, base_commit)
         topic_ref = repo.get_commit_ref(topic)
 
         old_commits = (
             repo.git(
-                "log", "--reverse", "--oneline", "--format=%H", f"{forkpoint}..{topic}"
+                "log",
+                "--reverse",
+                "--oneline",
+                "--format=%H",
+                f"{base_commit}..{topic}",
             )
             .decode()
             .splitlines()
@@ -190,12 +198,29 @@ def branch_out_commits_since_forkpoint(repo, current_branch, forkpoint, args) ->
         topic_ref.update(head, f"{NAME} rewrite")
 
     for topic in topics:
-        print()
         print(topic)
         for line in (
-            repo.git("log", "--oneline", f"{forkpoint}..{topic}").decode().splitlines()
+            repo.git("log", "--oneline", f"{base_commit}..{topic}")
+            .decode()
+            .splitlines()
         ):
             print("\t", line)
+
+
+def dwim(repo: Repository) -> Tuple[str, str]:
+    root = Path(repo.git("rev-parse", "--show-toplevel").decode().strip())
+    rebase_dir = root / ".git/rebase-merge"
+
+    if os.path.exists(rebase_dir):
+        with open(rebase_dir / "head-name") as f:
+            branch = os.path.basename(f.read().strip())
+        with open(rebase_dir / "onto") as f:
+            base_commit = f.read().strip()
+    else:
+        branch = repo.git("symbolic-ref", "--short", "HEAD").decode()
+        base_commit = "@{upstream}"
+
+    return branch, base_commit
 
 
 def parser() -> argparse.ArgumentParser:
@@ -206,42 +231,20 @@ def parser() -> argparse.ArgumentParser:
     )
 
     p.add_argument(
-        "--topics",
-        "-t",
-        action="store_true",
-        help="print topic branch names and exit",
+        "<topic>",
+        nargs="*",
+        help="only create the given branches",
     )
 
     return p
-
-
-def branch_and_forkpoint(repo: Repository) -> Tuple[str, str]:
-    root = Path(repo.git("rev-parse", "--show-toplevel").decode().strip())
-    head_name = root / ".git/rebase-merge/head-name"
-
-    if os.path.exists(head_name):
-        with open(head_name) as f:
-            branch = os.path.basename(f.read().strip())
-        remote = repo.config(
-            f"branch.{branch}.pushRemote",
-            default=repo.config("remote.pushDefault", default=b"origin"),
-        ).decode()
-        forkpoint = repo.git(
-            "merge-base", "--fork-point", "HEAD", f"{remote}/{branch}"
-        ).decode()
-    else:
-        branch = repo.git("symbolic-ref", "--short", "HEAD").decode()
-        forkpoint = repo.git("merge-base", branch, "@{upstream}").decode()
-
-    return branch, forkpoint
 
 
 def main(argv: Optional[List[str]] = None):
     args = parser().parse_args(argv)
     try:
         with Repository() as repo:
-            branch, forkpoint = branch_and_forkpoint(repo)
-            branch_out_commits_since_forkpoint(repo, branch, forkpoint, args)
+            branch, base_commit = dwim(repo)
+            create_branches(repo, branch, base_commit, getattr(args, "<topic>"))
     except CalledProcessError as err:
         print(f"subprocess exited with non-zero status: {err.returncode}")
         sys.exit(1)

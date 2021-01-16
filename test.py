@@ -3,177 +3,201 @@
 from subprocess import Popen
 from gitrevise.odb import Repository
 from pathlib import Path
-
+import pytest
+import textwrap
 import importlib
 
 gitbranchless = importlib.import_module("git-branchless")
 
 
-def test_branch_out_commits_since_forkpoint(tmp_path) -> None:
-    with new_repo(tmp_path) as repo:
-        a = repo.workdir / "a"
-        write(a, "first change in a\n")
-        repo.git("add", a)
-        repo.git("commit", "--message", "[a] a1")
+def test_create_branches(repo) -> None:
+    a = repo.workdir / "a"
+    repo.git("add", write("a", "first change in a\n"))
+    repo.git("commit", "--message", "[a] a1")
 
-        b = repo.workdir / "b"
-        write(b, "created b\n")
-        repo.git("add", b)
-        repo.git("commit", "--message", "[b] b1")
+    repo.git("add", write("b", "created b\n"))
+    repo.git("commit", "--message", "[b] b1")
 
-        repo.git("commit", "--all", "--allow-empty", "--message", "WIP commit")
+    repo.git("commit", "--all", "--allow-empty", "--message", "WIP commit")
 
-        write(a, "second change in a\n")
-        repo.git("commit", "--all", "--message", "[a] a2")
+    repo.git("add", write(a, "second change in a\n"))
+    repo.git("commit", "--message", "[a] a2")
 
-        write(a, "third change in a\n")
-        repo.git("commit", "--all", "--message", "[] a3")
+    repo.git("add", write(a, "third change in a\n"))
+    repo.git("commit", "--message", "[] a3")
 
-        repo.git("commit", "--all", "--allow-empty", "--message", "another WIP commit")
+    repo.git("commit", "--allow-empty", "--message", "another WIP commit")
 
-        expected = """\
-*  (HEAD -> master) another WIP commit
+    expected = """\
+*  (HEAD -> 🐬) another WIP commit
 *  [] a3
 *  [a] a2
 *  WIP commit
 *  [b] b1
 *  [a] a1
-*  (origin/master) master: latest master
-*  master: initial commit"""
+*  本"""
 
-        assert expected == graph(repo)
+    assert expected == graph(repo)
 
-        gitbranchless.branch_out_commits_since_forkpoint(
-            repo, "master", "@{upstream}", gitbranchless.parser().parse_args([])
-        )
+    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
 
-        expected = """\
-*  (a) a3
-*  a2
-*  a1
+    expected = """\
+*  (HEAD -> 🐬) another WIP commit
+*  [] a3
+*  [a] a2
+*  WIP commit
+*  [b] b1
+*  [a] a1
+| *  (a) a3
+| *  a2
+| *  a1
+|/
 | *  (b) b1
-|/  
-| *  (HEAD -> master) another WIP commit
-| *  [] a3
-| *  [a] a2
-| *  WIP commit
-| *  [b] b1
-| *  [a] a1
-|/  
-*  (origin/master) master: latest master
-*  master: initial commit"""
+|/
+*  本"""
 
-        assert graph(repo) == expected
+    assert graph(repo, "a", "b") == expected
 
 
-def test_branch_and_forkpoint(tmp_path) -> None:
-    assert Popen(("git", "init", tmp_path)).wait() == 0
-    origin = tmp_path / "origin"
+def test_dwim(repo) -> None:
+    origin = "origin.git"
     assert Popen(("git", "init", "--bare", origin)).wait() == 0
+    repo.git("remote", "add", "origin", origin)
 
-    with Repository(tmp_path) as repo:
-        repo.git("commit", "--allow-empty", "--message", "initial commit")
-        repo.git("remote", "add", "origin", str(origin))
+    repo.git("push", "origin", "🐬:🐳")
+    repo.git("config", "branch.🐬.remote", "origin")
+    repo.git("config", "branch.🐬.merge", "refs/heads/🐳")
 
-        repo.git("push", "origin", "master")
-        repo.git("config", "branch.master.remote", "origin")
-        repo.git("config", "branch.master.merge", "refs/heads/master")
-        a = tmp_path / "a"
+    branch, base_commit = gitbranchless.dwim(repo)
+    assert branch == "🐬"
+    assert base_commit == "@{upstream}"
+    root_id = repo.git("rev-parse", INITIAL_COMMIT).decode()
+    assert repo.git("rev-parse", "@{upstream}").decode() == root_id
 
-        # If we are not in an interactive rebase, we use the current branch.
-        branch, forkpoint = gitbranchless.branch_and_forkpoint(repo)
-        assert branch == "master"
-        assert forkpoint == forkpoint
+    def commit(contents):
+        repo.git("add", write("a", contents))
+        repo.git("commit", "--message", contents)
 
-        def commit(contents):
-            write(a, contents)
-            repo.git("add", a)
-            repo.git("commit", "--message", contents)
+    commit("onto")
+    commit("2")
+    test_branch = "test-branch"
+    repo.git("checkout", "-b", test_branch, "HEAD~")
+    commit("3")
 
-        # commit("1")
-        # commit("2")
-        # test_branch = "test-branch"
-        # repo.git("checkout", "-b", test_branch, "HEAD~")
-        # commit("3")
-
-        # # Interactive rebase, use the head of the branch we are rebasing.
-        # assert Popen(("git", "rebase", "master"), cwd=tmp_path).wait() != 0
-        # branch, forkpoint = gitbranchless.branch_and_forkpoint(repo)
-        # assert branch == test_branch
-        # # No remote means we use origin.
-        # assert forkpoint == f"origin/{test_branch}"
-
-        # # Same as above, but we do have a remote.
-        # test_remote = "test-remote"
-        # repo.git("config", f"branch.{test_branch}.remote", test_remote)
-        # branch, forkpoint = gitbranchless.branch_and_forkpoint(repo)
-        # assert branch == test_branch
-        # assert forkpoint == f"{test_remote}/{test_branch}"
+    assert Popen(("git", "rebase", "🐬")).wait() != 0
+    branch, base_commit = gitbranchless.dwim(repo)
+    assert branch == "test-branch"
+    assert base_commit == repo.git("rev-parse", "🐬").decode()
 
 
-def test_subjectRegex(tmp_path) -> None:
-    with new_repo(tmp_path) as repo:
-        repo.git("config", "branchless.subjectRegex", r"(\S*)():\s*(.*)")
+def test_parse_log_subjectRegex(repo) -> None:
+    repo.git("config", "branchless.subjectRegex", r"(\S*)():\s*(.*)")
 
-        repo.git("commit", "--allow-empty", "--message", "a: a1")
-        repo.git("commit", "--allow-empty", "--message", "b: b1")
-        repo.git("commit", "--allow-empty", "--message", ": b2")
-        repo.git("commit", "--allow-empty", "--message", "a: a2")
+    repo.git("commit", "--allow-empty", "--message", "a: a1")
+    repo.git("commit", "--allow-empty", "--message", "b: b1")
+    repo.git("commit", "--allow-empty", "--message", ": b2")
+    repo.git("commit", "--allow-empty", "--message", "a: a2")
 
-        parsed_log = gitbranchless.parse_log(repo, "@{upstream}")
-        assert tuple(
-            (topic, message) for commit_id, topic, _parents, message in parsed_log
-        ) == (
-            ("a", "a1"),
-            ("b", "b1"),
-            ("b", "b2"),
-            ("a", "a2"),
-        )
-
-
-def test_parents(tmp_path) -> None:
-    with new_repo(tmp_path) as repo:
-        repo.git("commit", "--allow-empty", "--message", "[c] c1")
-        repo.git("commit", "--allow-empty", "--message", "[c] c2")
-        repo.git("commit", "--allow-empty", "--message", "[b] b")
-        repo.git("commit", "--allow-empty", "--message", "[a:b:c] a")
-
-        parsed_log = gitbranchless.parse_log(repo, "@{upstream}")
-        assert tuple(
-            (topic, parents, message)
-            for commit_id, topic, parents, message in parsed_log
-        ) == (
-            ("c", [], "c1"),
-            ("c", [], "c2"),
-            ("b", [], "b"),
-            ("a", ["b", "c"], "a"),
-        )
+    commit_entries, dependency_graph = gitbranchless.parse_log(repo, INITIAL_COMMIT)
+    assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
+        ("a", "a1"),
+        ("b", "b1"),
+        ("b", "b2"),
+        ("a", "a2"),
+    )
+    assert dependency_graph == {
+        "a": set(),
+        "b": set(),
+    }
 
 
-def new_repo(path: Path) -> Repository:
-    repo_path = path / "repo"
-    assert Popen(("git", "init", repo_path)).wait() == 0
-    remote_path = path / "repo.git"
-    assert Popen(("git", "init", "--bare", remote_path)).wait() == 0
-    repo = Repository(repo_path)
-    repo.git("commit", "--allow-empty", "--message", "master: initial commit")
-    repo.git("commit", "--allow-empty", "--message", "master: latest master")
-    repo.git("remote", "add", "origin", remote_path)
-    repo.git("push", "--set-upstream", "origin", "master")
-    repo.git("config", "branchless.subjectRegex", gitbranchless.SUBJECT_REGEX)
-    return repo
+def test_parse_log_forward_dependency(repo) -> None:
+    repo.git("commit", "--allow-empty", "--message", "[a:b] a")
+    repo.git("commit", "--allow-empty", "--message", "[b] b")
+    commit_entries, dependency_graph = gitbranchless.parse_log(repo, INITIAL_COMMIT)
+    assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
+        ("a", "a"),
+        ("b", "b"),
+    )
+    assert dependency_graph == {
+        "a": {"b"},
+        "b": set(),
+    }
 
 
-def graph(repo) -> str:
-    return repo.git(
+def test_transitive_dependencies() -> None:
+    dep_graph = {
+        "a": {"c"},
+        "b": {"a"},
+        "c": {"b"},
+    }
+    assert gitbranchless.transitive_dependencies(dep_graph, "a") == {"a", "b", "c"}
+
+
+# Taken from git-revise
+@pytest.fixture(autouse=True)
+def hermetic_seal(tmp_path_factory, monkeypatch):
+    # Lock down user git configuration
+    home = tmp_path_factory.mktemp("home")
+    xdg_config_home = home / ".config"
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(xdg_config_home))
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "true")
+
+    # Lock down commit/authoring time
+    monkeypatch.setenv("GIT_AUTHOR_DATE", "1500000000 -0500")
+    monkeypatch.setenv("GIT_COMMITTER_DATE", "1500000000 -0500")
+
+    # Install known configuration
+    gitconfig = home / ".gitconfig"
+    gitconfig.write_bytes(
+        textwrap.dedent(
+            """\
+            [core]
+                eol = lf
+                autocrlf = false
+            [init]
+                defaultBranch = "🐬"
+            [user]
+                email = test@example.com
+                name = Test User
+            """
+        ).encode()
+    )
+
+    # Install our fake editor
+    monkeypatch.setenv("GIT_EDITOR", "false")
+
+    # Switch into a test workdir, and init our repo
+    workdir = tmp_path_factory.mktemp("workdir")
+    monkeypatch.chdir(workdir)
+    assert Popen(("git", "init", "-q")).wait() == 0
+    assert Popen(("git", "commit", "--allow-empty", "-m", "本")).wait() == 0
+
+
+INITIAL_COMMIT = ":/本"
+
+
+@pytest.fixture
+def repo(hermetic_seal):
+    with Repository() as repo:
+        yield repo
+
+
+def graph(repo, *args) -> str:
+    output = repo.git(
         "log",
         "--graph",
         "--oneline",
-        "--all",
         "--format=%d %s",
+        "🐬",
+        *args,
+        "--",
     ).decode()
+    return "\n".join(line.rstrip() for line in output.splitlines())
 
 
-def write(filename, contents) -> None:
+def write(filename, contents) -> str:
     with open(filename, "w") as f:
         f.write(contents)
+    return filename

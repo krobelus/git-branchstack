@@ -5,9 +5,8 @@
 ## Motivation
 
 Sometimes I am working on multiple unrelated changes to a [Git]
-repository. Instead of using a separate branch for each change, I prefer
-a branchless workflow similar to the one described in this [blog post by
-Drew DeVault].
+repository. Instead checking out a separate branch for each change, I prefer
+to do most of my work on a single branch..
 
 Git ships with [git send-email] which suits this workflow, however, many
 projects prefer to receive patches via pull requests.  To make proposed
@@ -25,7 +24,7 @@ the generated topic branches: just re-run `git branchless`.
 ## Installation
 
 1. Make sure you have Python 3.6 or higher.
-2. Install [git revise]. This is used to create commits without touching the worktree.
+2. Install [git revise].
 3. Add `git branchless` to your `$PATH`:
 
    ```sh
@@ -45,8 +44,8 @@ For example, if you have a history like
 
     $ git log @{upstream}.. --format=%s
     WIP unfinished commit
-    [my-awesome-feature] Some more work on feature
     [some-unrelated-fix] Unrelated fix
+    [my-awesome-feature] Some more work on feature
     [my-awesome-feature] Initial support for feature
 
 Then this command will create two branches:
@@ -87,19 +86,11 @@ $ git revise --interactive --edit
 ```
 Like `git revise`, you can use `git branchless` during an interactive rebase.
 
-To push all branches there is a separate script [git-branchless-push](./git-branchless-push):
-
-```sh
-$ ln -s $PWD/git-branchless-push ~/bin/
-$ git branchless && git branchless-push
-```
-
 ## Contributing
 
 You can send feedback to the [git-branchless mailing
 list](https://lists.sr.ht/~krobelus/git-branchless).
 
-[blog post by Drew DeVault]: <https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html>
 [Git]: <https://git-scm.com/>
 [git revise]: <https://github.com/mystor/git-revise/>
 [git send-email]: <https://git-send-email.io/>
