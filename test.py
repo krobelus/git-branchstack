@@ -98,6 +98,7 @@ def test_parse_log_subjectRegex(repo) -> None:
     repo.git("commit", "--allow-empty", "--message", "b: b1")
     repo.git("commit", "--allow-empty", "--message", "b: b2")
     repo.git("commit", "--allow-empty", "--message", "a: a2")
+    repo.git("commit", "--allow-empty", "--message", "c:a: c1")
 
     commit_entries, dependency_graph = gitbranchless.parse_log(repo, INITIAL_COMMIT)
     assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
@@ -105,10 +106,12 @@ def test_parse_log_subjectRegex(repo) -> None:
         ("b", "b1"),
         ("b", "b2"),
         ("a", "a2"),
+        ("c", "c1"),
     )
     assert dependency_graph == {
         "a": set(),
         "b": set(),
+        "c": {"a"},
     }
 
 
