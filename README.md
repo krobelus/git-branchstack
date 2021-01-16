@@ -86,6 +86,13 @@ $ git revise --interactive --edit
 ```
 Like `git revise`, you can use `git branchless` during an interactive rebase.
 
+You can use [git-branchless-pick](./git-branchless-pick) to integrate
+other refs into your branch:
+
+```sh
+$ git branchless-pick origin/pullrequest/123 # Adds commits to your branch, prefixed with `[pullrequest/123]`
+```
+
 ## Contributing
 
 You can send feedback to the [git-branchless mailing

@@ -1,0 +1,44 @@
+#!/bin/sh
+
+usage() {
+	echo "\
+usage: $0 <branch>
+
+Cherry-pick commits from <branch>, prefixing commit messages with the
+branch's tag.  If the branch was already picked, it is removed first." && exit 1
+}
+
+test "$1" || usage
+ref_with_remote="$1"
+shift
+topic="${ref_with_remote#*/}"
+
+prefix=$(git config branchless.subjectPrefixPrefix || echo [)
+suffix=$(git config branchless.subjectPrefixSuffix || echo ])
+
+cherries=$(
+	git log --reverse --format="pick %h $prefix${topic}$suffix %s" .."$ref_with_remote" 2>/dev/null
+)
+test "$cherries" || usage
+
+todo=$(IFS='
+'
+for cherry in $cherries
+do
+	printf '%s\nexec %s\n' \
+		"$cherry" \
+		"GIT_EDITOR='perl -pi -e \"s{^}{$prefix${topic}$suffix } if $. == 1\"' git commit --amend"
+done
+)
+todo=$todo \
+editor=$(git var GIT_EDITOR) \
+topic=$topic prefix=$prefix suffix=$suffix \
+GIT_SEQUENCE_EDITOR='
+	perl -pi -e '\''
+		use Env;
+		if (m/^pick \S+ \Q$prefix$topic$suffix /) { s/^pick/drop/; }
+		elsif (!$todo or !m/^$/ and !first) { next; }
+		$_ = $todo . "\n" . $_;
+		$todo = "";
+		END { exec "$editor .git/rebase-merge/git-rebase-todo"; }
+	'\''' git rebase -i --no-autosquash "$@"
