@@ -24,13 +24,13 @@ def test_create_branches(repo) -> None:
     repo.git("commit", "--message", "[a] a2")
 
     repo.git("add", write(a, "third change in a\n"))
-    repo.git("commit", "--message", "[] a3")
+    repo.git("commit", "--message", "[a] a3")
 
     repo.git("commit", "--allow-empty", "--message", "another WIP commit")
 
     expected = """\
 *  (HEAD -> 🐬) another WIP commit
-*  [] a3
+*  [a] a3
 *  [a] a2
 *  WIP commit
 *  [b] b1
@@ -43,7 +43,7 @@ def test_create_branches(repo) -> None:
 
     expected = """\
 *  (HEAD -> 🐬) another WIP commit
-*  [] a3
+*  [a] a3
 *  [a] a2
 *  WIP commit
 *  [b] b1
@@ -95,7 +95,7 @@ def test_parse_log_subjectRegex(repo) -> None:
 
     repo.git("commit", "--allow-empty", "--message", "a: a1")
     repo.git("commit", "--allow-empty", "--message", "b: b1")
-    repo.git("commit", "--allow-empty", "--message", ": b2")
+    repo.git("commit", "--allow-empty", "--message", "b: b2")
     repo.git("commit", "--allow-empty", "--message", "a: a2")
 
     commit_entries, dependency_graph = gitbranchless.parse_log(repo, INITIAL_COMMIT)

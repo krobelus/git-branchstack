@@ -46,7 +46,6 @@ When you add another commit, or update a previous one, simply re-run `git
 branchless` to update the generated topic branches.
 
 Commits whose message does not start with a topic tag are ignored.
-Use the special commit message prefix `[]` to reuse the prevous commit's topic.
 
 If there is a merge conflict, you will be prompted to resolve it.  However,
 it is usually a good idea to avoid this by using the same topic for dependent
@@ -70,7 +69,6 @@ def parse_log(repo, base_commit) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
         .decode()
         .splitlines()
     )
-    current_topic = None
     subject_regex = repo.config(
         f"branchless.subjectRegex", default=SUBJECT_REGEX
     ).decode()
@@ -85,18 +83,15 @@ def parse_log(repo, base_commit) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
             parent_topics = parents.split(":")
 
         # An empty topic means to reuse the previous topic.
-        if topic != "":
-            current_topic = topic
-
-        if not current_topic:
+        if not topic:
             continue
 
-        commit_entries += [(commit, current_topic, subject)]
+        commit_entries += [(commit, topic, subject)]
 
-        if current_topic not in dependency_graph:
-            dependency_graph[current_topic] = set()
+        if topic not in dependency_graph:
+            dependency_graph[topic] = set()
         if parent_topics:
-            dependency_graph[current_topic].update(parent_topics)
+            dependency_graph[topic].update(parent_topics)
 
     return commit_entries, dependency_graph
 
