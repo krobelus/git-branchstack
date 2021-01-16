@@ -47,16 +47,18 @@ branchless` to update the generated topic branches.
 
 Commits whose message does not start with a topic tag are ignored.
 
-If there is a merge conflict, you will be prompted to resolve it.  However,
-it is usually a good idea to avoid this by using the same topic for dependent
-commits.
+If there is a merge conflict, you will be prompted to resolve it.
+To avoid conflicts, you can specify dependencies between branches.
+For example use `[child:parent1:parent2]` to base `child` off both `parent1`
+and `parent2`.
 
-You can specify dependencies between branches for example use
-`[child:parent1:parent2]` to base `child` off both `parent1` and `parent2`.
-Please ensure that dependencies appear before users in your branch.
+Instead of the default `[` and `]` guards, you can set
+`branchless.subjectPrefixPrefix` and `branchless.subjectPrefixSuffix`,
+respectively.
 """
 
-SUBJECT_REGEX = rb"\[([^\]:]*)(?::([^\]]*))*\]\s*(.*)"
+SUBJECT_PREFIX_PREFIX = b"["
+SUBJECT_PREFIX_SUFFIX = b"]"
 
 CommitEntries = List[Tuple[str, str, str]]
 
@@ -69,18 +71,26 @@ def parse_log(repo, base_commit) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
         .decode()
         .splitlines()
     )
-    subject_regex = repo.config(
-        f"branchless.subjectRegex", default=SUBJECT_REGEX
+    prefix_prefix = repo.config(
+        f"branchless.subjectPrefixPrefix",
+        default=SUBJECT_PREFIX_PREFIX,
+    ).decode()
+    prefix_suffix = repo.config(
+        f"branchless.subjectPrefixSuffix",
+        default=SUBJECT_PREFIX_SUFFIX,
     ).decode()
     for line in patches:
-        match = re.match(r"^(\S*) " + subject_regex, line)
-        if match is None:
+        words = line.split(maxsplit=2)
+        if len(words) < 3:
+            continue
+        commit, prefix, subject = words
+        if not prefix.startswith(prefix_prefix) or not prefix.endswith(prefix_suffix):
             continue
 
-        commit, topic, parents, subject = match.groups()
-        parent_topics = []
-        if parents:
-            parent_topics = parents.split(":")
+        prefix = prefix[len(prefix_prefix) : -len(prefix_suffix)]
+        topic_with_parents = prefix.split(":")
+        topic = topic_with_parents[0]
+        parent_topics = [t for t in topic_with_parents[1:] if t]
 
         # An empty topic means to reuse the previous topic.
         if not topic:

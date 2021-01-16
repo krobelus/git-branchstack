@@ -91,7 +91,8 @@ def test_dwim(repo) -> None:
 
 
 def test_parse_log_subjectRegex(repo) -> None:
-    repo.git("config", "branchless.subjectRegex", r"(\S*)():\s*(.*)")
+    repo.git("config", "branchless.subjectPrefixPrefix", r"")
+    repo.git("config", "branchless.subjectPrefixSuffix", r":")
 
     repo.git("commit", "--allow-empty", "--message", "a: a1")
     repo.git("commit", "--allow-empty", "--message", "b: b1")

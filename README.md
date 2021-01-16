@@ -66,13 +66,14 @@ branchless` to update the generated topic branches.
 
 Commits whose message does not start with a topic tag are ignored.
 
-If there is a merge conflict, you will be prompted to resolve it.  However,
-it is usually a good idea to avoid this by using the same topic for dependent
-commits.
+If there is a merge conflict, you will be prompted to resolve it.
+To avoid conflicts, you can specify dependencies between branches.
+For example use `[child:parent1:parent2]` to base `child` off both `parent1`
+and `parent2`.
 
-You can specify dependencies between branches for example use
-`[child:parent1:parent2]` to base `child` off both `parent1` and `parent2`.
-Please ensure that dependencies appear before users in your branch.
+Instead of the default `[` and `]` guards, you can set
+`branchless.subjectPrefixPrefix` and `branchless.subjectPrefixSuffix`,
+respectively.
 
 ## Tips
 
