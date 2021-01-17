@@ -174,7 +174,7 @@ def update_cache(repo, topics):
 
 
 def create_branches(
-    repo, current_branch, base_commit, topics_to_create=None, force=False
+    repo, current_branch, base_commit, branches=None, force=False
 ) -> None:
     commit_entries, dependency_graph = parse_log(repo, base_commit)
 
@@ -190,9 +190,9 @@ def create_branches(
     all_topics = set(topics)
     topic_set = all_topics
 
-    if topics_to_create:
+    if branches:
         topic_set = set()
-        for topic in topics_to_create:
+        for topic in branches:
             topic_set.add(topic)
         topics = {t: None for t in topics if t in topic_set}
 
