@@ -2,10 +2,13 @@
 
 usage() {
 	echo "\
-usage: $0 <branch>
+usage: git ${0##*/git-} <commit> [<rebase-args>...]
 
-Cherry-pick commits from <branch>, prefixing commit messages with the
-branch's tag.  If the branch was already picked, it is removed first." && exit 1
+Start a new interactive rebase, with these steps planned:
+- drop commits whose subject start with \"[<commit>] \"
+- cherry-pick commits <commit>.. and prefix their subjects with \"[<commit>] \"
+
+Arguments beyond the first are passed on to git-rebase(1)." && exit 1
 }
 
 test "$1" || usage
