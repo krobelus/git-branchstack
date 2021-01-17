@@ -113,7 +113,8 @@ def validate_cache(repo, topic_set, force):
 
 def update_cache(repo, topics):
     cache_path = repo.gitdir / "branchless-cache"
-    with open(cache_path, "w+") as f:
+    mode = "r+" if cache_path.exists() else "w+"
+    with open(cache_path, mode) as f:
         cached_shas = {
             w[0]: w[1] for w in map(lambda line: line.split(), f.read().splitlines())
         }

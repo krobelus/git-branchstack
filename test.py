@@ -103,6 +103,22 @@ def test_create_branches_stale_cache(repo) -> None:
     assert graph(repo, "lost-branch") == expected
 
 
+def test_create_branches_carry_over_cache(repo) -> None:
+    repo.git("commit", "--allow-empty", "-m", "[a] subject a")
+    repo.git("commit", "--allow-empty", "-m", "[b] subject b")
+
+    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT, branches=("b",))
+    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT, branches=("a",))
+
+    assert tuple(
+        line.split()[0]
+        for line in (repo.gitdir / "branchless-cache").read_bytes().splitlines()
+    ) == (
+        b"b",
+        b"a",
+    )
+
+
 def test_dwim(repo) -> None:
     origin = "origin.git"
     assert Popen(("git", "init", "--bare", origin)).wait() == 0
