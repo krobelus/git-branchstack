@@ -44,7 +44,7 @@ Each topic branch is the result of applying the topic's commits on top of
 For example, if you have a history like
 
     $ git log @{upstream}.. --format=%s
-    WIP unfinished commit
+    Local commit
     [some-unrelated-fix] Unrelated fix
     [my-awesome-feature] Some more work on feature
     [my-awesome-feature] Initial support for feature
@@ -52,15 +52,17 @@ For example, if you have a history like
 Then this command will create two branches:
 
     $ git branchless
-    Updating refs/heads/my-awesome-feature (ba5e58a => 48a53fec)
-    Updating refs/heads/some-unrelated-fix (ba5e58a => e612f26e)
-
-    my-awesome-feature
-        9d33b57e Initial support for feature
-        48a53fec Some more work on feature
-
-    some-unrelated-fix
-        e612f26e Unrelated fix
+    $ git log --all --graph --oneline
+    * 2708e12 (HEAD -> local-branch) [my-awesome-feature] Initial support for feature
+    * c6dd3ab [my-awesome-feature] Some more work on feature
+    * 683de4b [some-unrelated-fix] Unrelated fix
+    * 3eee379 Local commit
+    | * 7645890 (my-awesome-feature) Initial support for feature
+    | * e420fd6 Some more work on feature
+    |/
+    | * d5f4bb2 (some-unrelated-fix) Unrelated fix
+    |/
+    * 2ec4d51 Initial commit
 
 When you add another commit, or update a previous one, simply re-run `git
 branchless` to update the generated topic branches.
