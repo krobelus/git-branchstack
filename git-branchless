@@ -259,7 +259,7 @@ def create_branches(
     for topic in topics:
         print(topic)
         for line in (
-            repo.git("log", "--oneline", f"{base_commit}..{topic_fqn}")
+            repo.git("log", "--oneline", f"{base_commit}..refs/heads/{topic}")
             .decode()
             .splitlines()
         ):
