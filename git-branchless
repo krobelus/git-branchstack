@@ -231,7 +231,7 @@ def create_branches(
 
             new_messages += [head.message]
         topic_fqn = f"refs/heads/{topic}"
-        if Popen(("git", "rev-parse", topic_fqn), stdout=PIPE, stderr=PIPE).wait() != 0:
+        if not (repo.gitdir / topic_fqn).exists():
             repo.git("branch", topic, base_commit)
         topic_ref = repo.get_commit_ref(topic_fqn)
 
