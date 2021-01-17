@@ -5,21 +5,22 @@
 ## Motivation
 
 Sometimes I am working on multiple unrelated changes to a [Git]
-repository. Instead checking out a separate branch for each change, I prefer
-to do most of my work on a single branch..
+repository. Instead of checking out a separate branch for each change,
+I prefer to do most of my work on a single branch. This [blog post] list
+some advantages.
 
-Git ships with [git send-email] which suits this workflow, however, many
-projects prefer to receive patches via pull requests.  To make proposed
-changes easy to review, you'll want to submit a separate pull request for
-each independent change.  With a branchless workflow, the sole local branch
+Git already supports this workflow via [git format-patch] and [git send-email],
+however, many projects prefer to receive patches as pull requests.  To make
+proposed changes easy to review, you'll want to submit a separate pull request
+for each independent change.  With a branchless workflow, the sole local branch
 typically contains multiple independent changes. To submit those upstream as
 pull requests, you need to create a separate topic branch for each change.
 Running `git branchless` creates the desired topic branches without requiring
-you to switch back and forth between branches. This allows you to submit
-small, independent pull requests while enjoying the benefits of a branchless
-workflow. After making any changes to your branch (for example by addressing
-review comments or rebasing on upstream changes) you can trivially update
-the generated topic branches: just re-run `git branchless`.
+you to switch back and forth between branches. This allows you to submit small
+pull requests while enjoying the benefits of a branchless workflow. After
+making any changes to your branch (for example by addressing review comments
+or rebasing on upstream changes) you can trivially update the generated
+topic branches: just re-run `git branchless`.
 
 ## Installation
 
@@ -34,8 +35,8 @@ the generated topic branches: just re-run `git branchless`.
 
 ## Usage
 
-Create some commits with commit messages starting with `[topic] ` where `topic`
-is any valid branch name.  Then run `git branchless` to create a branch
+Create some commits with commit messages starting with `[<topic>] ` where
+`<topic>` is a valid branch name.  Then run `git branchless` to create a branch
 for each of those topics among commits in the range `@{upstream}..HEAD`.
 Each topic branch is the result of applying the topic's commits on top of
 `@{upstream}`.
@@ -69,10 +70,11 @@ Commits whose message does not start with a topic tag are ignored.
 If there is a merge conflict, you will be prompted to resolve it.
 To avoid conflicts, you can specify dependencies between branches.
 For example use `[child:parent1:parent2]` to base `child` off both `parent1`
-and `parent2`.
+and `parent2`. The order here does not matter because it will be determined
+by which topic occurs first in the commit log.
 
-Instead of the default `[` and `]` guards, you can set
-`branchless.subjectPrefixPrefix` and `branchless.subjectPrefixSuffix`,
+Instead of the default `[` and `]` guards, you can set Git configuration
+values `branchless.subjectPrefixPrefix` and `branchless.subjectPrefixSuffix`,
 respectively.
 
 ## Tips
@@ -87,19 +89,23 @@ $ git revise --interactive --edit
 Like `git revise`, you can use `git branchless` during an interactive rebase.
 
 You can use [git-branchless-pick](./git-branchless-pick) to integrate
-other refs into your branch:
+other commit ranges into your branch:
 
 ```sh
 $ ln -s $PWD/git-branchless-pick ~/bin/
-$ git branchless-pick some-branch # Cherry-picks the commits from that branch, prefixed with `[some-branch] `.
+$ git branchless-pick some-branch 
 ```
 
-You can integrate with GitHub pull requests: 
+This cherry-picks all missing commits from that branch, prefixed with
+`[some-branch] `.  Old commits are dropped, so this allows you to quickly
+update to the latest upstream version of a ref.
+
+Here's how you would integrate that with GitHub pull requests:
 
 ```sh
 $ git config remote.origin.fetch '+refs/pull/*/head:refs/remotes/origin/pr-*'
 $ git fetch origin
-$ git branchless-pick origin/pr-123 # Drop any old version, and cherry-pick the latest upstream commits.
+$ git branchless-pick origin/pr-123
 ```
 
 ## Contributing
@@ -109,4 +115,6 @@ list](https://lists.sr.ht/~krobelus/git-branchless).
 
 [Git]: <https://git-scm.com/>
 [git revise]: <https://github.com/mystor/git-revise/>
+[git format-patch]: <https://git-scm.com/docs/git-format-patch>
 [git send-email]: <https://git-send-email.io/>
+[blog post]: <https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html>

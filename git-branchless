@@ -15,8 +15,8 @@ from gitrevise.merge import rebase, MergeConflict
 NAME = "git-branchless"
 
 USAGE = """\
-Create some commits with commit messages starting with `[topic] ` where `topic`
-is any valid branch name.  Then run `git branchless` to create a branch
+Create some commits with commit messages starting with `[<topic>] ` where
+`<topic>` is a valid branch name.  Then run `git branchless` to create a branch
 for each of those topics among commits in the range `@{upstream}..HEAD`.
 Each topic branch is the result of applying the topic's commits on top of
 `@{upstream}`.
@@ -50,10 +50,11 @@ Commits whose message does not start with a topic tag are ignored.
 If there is a merge conflict, you will be prompted to resolve it.
 To avoid conflicts, you can specify dependencies between branches.
 For example use `[child:parent1:parent2]` to base `child` off both `parent1`
-and `parent2`.
+and `parent2`. The order here does not matter because it will be determined
+by which topic occurs first in the commit log.
 
-Instead of the default `[` and `]` guards, you can set
-`branchless.subjectPrefixPrefix` and `branchless.subjectPrefixSuffix`,
+Instead of the default `[` and `]` guards, you can set Git configuration
+values `branchless.subjectPrefixPrefix` and `branchless.subjectPrefixSuffix`,
 respectively.
 """
 
