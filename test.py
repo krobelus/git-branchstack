@@ -78,6 +78,25 @@ def test_create_branches(repo) -> None:
     assert graph(repo, "a", "b") == expected
 
 
+def test_create_branches_ambiguos_ref(repo) -> None:
+    a = repo.workdir / "a"
+
+    repo.git("update-ref", "clash", "HEAD")
+
+    repo.git("add", write("a", ""))
+    repo.git("commit", "--message", "[clash] commit on branch")
+
+    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+
+    expected = """\
+*  (HEAD -> 🐬) [clash] commit on branch
+| *  (clash) commit on branch
+|/
+*  本"""
+
+    assert graph(repo, "refs/heads/clash") == expected
+
+
 def test_dwim(repo) -> None:
     origin = "origin.git"
     assert Popen(("git", "init", "--bare", origin)).wait() == 0

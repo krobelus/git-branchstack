@@ -6,7 +6,7 @@ import re
 import sys
 from typing import Dict, Optional, List, Set, Tuple
 from pathlib import Path
-from subprocess import CalledProcessError, PIPE
+from subprocess import CalledProcessError, PIPE, Popen
 
 from gitrevise.utils import EditorError
 from gitrevise.odb import Repository
@@ -228,12 +228,10 @@ def create_branches(
             head = head.update(message=message)
 
             new_messages += [head.message]
-        if (
-            not repo.git("rev-parse", "--revs-only", topic)
-            or repo.git("cat-file", "-t", topic).decode() != "commit"
-        ):
+        topic_fqn = f"refs/heads/{topic}"
+        if Popen(("git", "rev-parse", topic_fqn), stdout=PIPE, stderr=PIPE).wait() != 0:
             repo.git("branch", topic, base_commit)
-        topic_ref = repo.get_commit_ref(topic)
+        topic_ref = repo.get_commit_ref(topic_fqn)
 
         old_commits = (
             repo.git(
@@ -241,7 +239,7 @@ def create_branches(
                 "--reverse",
                 "--oneline",
                 "--format=%H",
-                f"{base_commit}..{topic}",
+                f"{base_commit}..{topic_fqn}",
             )
             .decode()
             .splitlines()
@@ -260,7 +258,7 @@ def create_branches(
     for topic in topics:
         print(topic)
         for line in (
-            repo.git("log", "--oneline", f"{base_commit}..{topic}")
+            repo.git("log", "--oneline", f"{base_commit}..{topic_fqn}")
             .decode()
             .splitlines()
         ):
