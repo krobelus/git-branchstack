@@ -1,0 +1,11 @@
+#!/bin/sh
+# Prints all branches that are cooking.
+
+prefix=$(git config branchless.subjectPrefixPrefix || echo [)
+suffix=$(git config branchless.subjectPrefixSuffix || echo ])
+
+upstream=@{upstream}
+git log "${@:-$upstream..}" --format=%s |
+	prefix=$prefix suffix=$suffix \
+	perl -ne 'use Env; print "$1\n" if m{^\Q$prefix\E([\w/-]+)[\w/:-]*\Q$suffix }' |
+	uniq
