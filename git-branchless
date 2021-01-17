@@ -129,27 +129,28 @@ class BranchWasModifiedError(Exception):
 
 def validate_cache(repo, topic_set, force):
     cache_path = repo.gitdir / "branchless-cache"
-    if os.path.exists(cache_path):
-        with open(cache_path, "r") as f:
-            cached_shas = [
-                (w[0], w[1])
-                for w in map(lambda line: line.split(), f.read().splitlines())
-            ]
-        current_shas = (
-            repo.git("rev-parse", *[f"refs/heads/{t[0]}" for t in cached_shas])
-            .decode()
-            .splitlines()
-        )
-        for i, current_sha in enumerate(current_shas):
-            topic, cached_sha = cached_shas[i]
-            if topic not in topic_set:
-                continue
-            if current_sha == cached_sha:
-                continue
-            if force:
-                print(f"Will overwrite modified branch {topic}")
-            else:
-                raise BranchWasModifiedError(topic)
+    if not os.path.exists(cache_path):
+        return
+    with open(cache_path, "r") as f:
+        cached_shas = [
+            (w[0], w[1])
+            for w in map(lambda line: line.split(), f.read().splitlines())
+        ]
+    current_shas = (
+        repo.git("rev-parse", *[f"refs/heads/{t[0]}" for t in cached_shas])
+        .decode()
+        .splitlines()
+    )
+    for i, current_sha in enumerate(current_shas):
+        topic, cached_sha = cached_shas[i]
+        if topic not in topic_set:
+            continue
+        if current_sha == cached_sha:
+            continue
+        if force:
+            print(f"Will overwrite modified branch {topic}")
+        else:
+            raise BranchWasModifiedError(topic)
 
 
 def update_cache(repo, topics):
