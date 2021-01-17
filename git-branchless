@@ -122,7 +122,58 @@ def transitive_dependencies_rec(
         transitive_dependencies_rec(depgraph, x, visited)
 
 
-def create_branches(repo, current_branch, base_commit, topics_to_create=None) -> None:
+class BranchWasModifiedError(Exception):
+    pass
+
+
+def validate_cache(repo, topic_set, force):
+    cache_path = repo.gitdir / "branchless-cache"
+    if os.path.exists(cache_path):
+        with open(cache_path, "r") as f:
+            cached_shas = [
+                (w[0], w[1])
+                for w in map(lambda line: line.split(), f.read().splitlines())
+            ]
+        current_shas = (
+            repo.git("rev-parse", *[f"refs/heads/{t[0]}" for t in cached_shas])
+            .decode()
+            .splitlines()
+        )
+        for i, current_sha in enumerate(current_shas):
+            topic, cached_sha = cached_shas[i]
+            if topic not in topic_set:
+                continue
+            if current_sha == cached_sha:
+                continue
+            if force:
+                print(f"Will overwrite modified branch {topic}")
+            else:
+                raise BranchWasModifiedError(topic)
+
+
+def update_cache(repo, topics):
+    cache_path = repo.gitdir / "branchless-cache"
+    with open(cache_path, "w+") as f:
+        cached_shas = {
+            w[0]: w[1] for w in map(lambda line: line.split(), f.read().splitlines())
+        }
+        new_topics = cached_shas
+        for t in topics:
+            if topics[t] is not None:
+                new_topics[t] = topics[t]
+        new_content = ""
+        for topic in new_topics:
+            sha = new_topics[topic]
+            if sha is not None:
+                new_content += f"{topic} {sha}{os.linesep}"
+        f.seek(0)
+        f.truncate()
+        f.write(new_content)
+
+
+def create_branches(
+    repo, current_branch, base_commit, topics_to_create=None, force=False
+) -> None:
     commit_entries, dependency_graph = parse_log(repo, base_commit)
 
     def by_first_commit_on_topic(commit_entry):
@@ -141,7 +192,7 @@ def create_branches(repo, current_branch, base_commit, topics_to_create=None) ->
         topic_set = set()
         for topic in topics_to_create:
             topic_set.add(topic)
-        topics = [t for t in topics if t in topic_set]
+        topics = {t: None for t in topics if t in topic_set}
 
     for child in topics:
         for parent in dependency_graph[child]:
@@ -151,6 +202,8 @@ def create_branches(repo, current_branch, base_commit, topics_to_create=None) ->
     assert current_branch not in set(
         topics
     ), f"Refusing to overwrite current branch {current_branch}"
+
+    validate_cache(repo, topic_set, force)
 
     base_commit_id = repo.git("rev-parse", base_commit).decode()
     for topic in topics:
@@ -195,12 +248,14 @@ def create_branches(repo, current_branch, base_commit, topics_to_create=None) ->
         )
         old_messages = [repo.get_commit(commit).message for commit in old_commits]
 
-        if head.tree() == topic_ref.target.tree() and new_messages == old_messages:
-            continue
+        if head.tree() != topic_ref.target.tree() or new_messages != old_messages:
+            topic_oid = topic_ref.target.oid
+            print(f"Updating {topic_ref.name} ({topic_oid} => {head.oid})")
+            topic_ref.update(head, f"{NAME} rewrite")
 
-        topic_oid = topic_ref.target.oid
-        print(f"Updating {topic_ref.name} ({topic_oid} => {head.oid})")
-        topic_ref.update(head, f"{NAME} rewrite")
+        topics[topic] = topic_ref.target.oid
+
+    update_cache(repo, topics)
 
     for topic in topics:
         print(topic)
@@ -241,6 +296,13 @@ def parser() -> argparse.ArgumentParser:
         help="only create the given branches",
     )
 
+    p.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="overwrite branches even if they were modified since the last run",
+    )
+
     return p
 
 
@@ -249,7 +311,14 @@ def main(argv: Optional[List[str]] = None):
     try:
         with Repository() as repo:
             branch, base_commit = dwim(repo)
-            create_branches(repo, branch, base_commit, getattr(args, "<topic>"))
+            create_branches(
+                repo, branch, base_commit, getattr(args, "<topic>"), force=args.force
+            )
+    except BranchWasModifiedError as err:
+        print(
+            f"error: generated branch {err} has been modified. Use --force to overwrite."
+        )
+        sys.exit(1)
     except CalledProcessError as err:
         print(f"subprocess exited with non-zero status: {err.returncode}")
         sys.exit(1)

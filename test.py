@@ -58,6 +58,25 @@ def test_create_branches(repo) -> None:
 
     assert graph(repo, "a", "b") == expected
 
+    # A repeated invocation does not change anything.
+    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+    assert graph(repo, "a", "b") == expected
+
+    # Modifying a generated branch will make us fail.
+    repo.git("update-ref", "refs/heads/a", "HEAD")
+    assert graph(repo, "a", "b") != expected
+    try:
+        gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+        assert (
+            False
+        ), "Expect error about refusing to create branch when it was modified since the last run"
+    except gitbranchless.BranchWasModifiedError:
+        pass
+
+    # Unless we are asked to overwrite them.
+    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT, force=True)
+    assert graph(repo, "a", "b") == expected
+
 
 def test_dwim(repo) -> None:
     origin = "origin.git"
