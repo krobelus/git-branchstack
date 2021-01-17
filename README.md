@@ -90,7 +90,16 @@ You can use [git-branchless-pick](./git-branchless-pick) to integrate
 other refs into your branch:
 
 ```sh
-$ git branchless-pick origin/pullrequest/123 # Adds commits to your branch, prefixed with `[pullrequest/123]`
+$ ln -s $PWD/git-branchless-pick ~/bin/
+$ git branchless-pick some-branch # Cherry-picks the commits from that branch, prefixed with `[some-branch] `.
+```
+
+You can integrate with GitHub pull requests: 
+
+```sh
+$ git config remote.origin.fetch '+refs/pull/*/head:refs/remotes/origin/pr-*'
+$ git fetch origin
+$ git branchless-pick origin/pr-123 # Drop any old version, and cherry-pick the latest upstream commits.
 ```
 
 ## Contributing
