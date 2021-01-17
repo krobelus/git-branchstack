@@ -79,7 +79,7 @@ Instead of the default `[` and `]` guards, you can set Git configuration
 values `branchless.subjectPrefixPrefix` and `branchless.subjectPrefixSuffix`,
 respectively.
 
-# Integrating commits from other branches
+## Integrating commits from other branches
 
 You can use [git-branchless-pick](./git-branchless-pick) to integrate
 other commit ranges into your branch:
