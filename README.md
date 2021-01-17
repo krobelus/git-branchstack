@@ -1,6 +1,6 @@
 # git branchless
 
-*Efficiently create topic branches without leaving your local branch*
+*Efficiently manage topic branches without leaving your local branch*
 
 ## Motivation
 
@@ -112,8 +112,9 @@ $ git branchless-pick origin/pr-123
 
 ## Contributing
 
-You can send feedback to the [git-branchless mailing
-list](https://lists.sr.ht/~krobelus/git-branchless).
+You're welcome give feedback on the public mailing list by sending email
+to <mailto:~krobelus/git-branchless@lists.sr.ht>.  To see prior postings,
+visit the [mailing list archive](https://lists.sr.ht/~krobelus/git-branchless).
 
 [Git]: <https://git-scm.com/>
 [git revise]: <https://github.com/mystor/git-revise/>
