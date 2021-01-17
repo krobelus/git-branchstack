@@ -79,16 +79,7 @@ Instead of the default `[` and `]` guards, you can set Git configuration
 values `branchless.subjectPrefixPrefix` and `branchless.subjectPrefixSuffix`,
 respectively.
 
-## Tips
-
-You can use [git revise] to efficiently modify your commit messages to
-contain the `[topic]` tags. This command lets you edit all commit messages in
-`@{upstream}..HEAD`.
-
-```sh
-$ git revise --interactive --edit
-```
-Like `git revise`, you can use `git branchless` during an interactive rebase.
+# Integrating commits from other branches
 
 You can use [git-branchless-pick](./git-branchless-pick) to integrate
 other commit ranges into your branch:
@@ -109,6 +100,17 @@ $ git config remote.origin.fetch '+refs/pull/*/head:refs/remotes/origin/pr-*'
 $ git fetch origin
 $ git branchless-pick origin/pr-123
 ```
+
+## Tips
+
+You can use [git revise] to efficiently modify your commit messages to
+contain the `[topic]` tags. This command lets you edit all commit messages in
+`@{upstream}..HEAD`.
+
+```sh
+$ git revise --interactive --edit
+```
+Like `git revise`, you can use `git branchless` during an interactive rebase.
 
 ## Contributing
 
