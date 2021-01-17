@@ -84,6 +84,25 @@ def test_create_branches_ambiguos_ref(repo) -> None:
     assert graph(repo, "refs/heads/clash") == expected
 
 
+def test_create_branches_stale_cache(repo) -> None:
+    repo.git("commit", "--allow-empty", "-m", "[lost-branch] subject")
+
+    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+
+    expected = """\
+*  (HEAD -> 🐬) [lost-branch] subject
+| *  (lost-branch) subject
+|/
+*  本"""
+
+    assert graph(repo, "lost-branch") == expected
+
+    (repo.gitdir / "refs/heads/lost-branch").unlink()
+
+    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+    assert graph(repo, "lost-branch") == expected
+
+
 def test_dwim(repo) -> None:
     origin = "origin.git"
     assert Popen(("git", "init", "--bare", origin)).wait() == 0

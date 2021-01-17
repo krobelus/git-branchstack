@@ -90,20 +90,19 @@ def validate_cache(repo, topic_set, force):
     cache_path = repo.gitdir / "branchless-cache"
     if not os.path.exists(cache_path):
         return
-    with open(cache_path, "r") as f:
-        cached_shas = [
-            (w[0], w[1])
-            for w in map(lambda line: line.split(), f.read().splitlines())
-        ]
-    current_shas = (
-        repo.git("rev-parse", *[f"refs/heads/{t[0]}" for t in cached_shas])
-        .decode()
-        .splitlines()
-    )
-    for i, current_sha in enumerate(current_shas):
-        topic, cached_sha = cached_shas[i]
-        if topic not in topic_set:
+    cached_shas = [
+        (w[0], w[1])
+        for w in map(
+            lambda line: line.split(), cache_path.read_bytes().decode().splitlines()
+        )
+    ]
+    for topic, cached_sha in cached_shas:
+        if topic not in topic_set:  # The user did not ask to create this branch.
             continue
+        branch_file = repo.gitdir / "refs/heads" / topic
+        if not branch_file.exists():
+            continue
+        current_sha = branch_file.read_bytes().decode().rstrip()
         if current_sha == cached_sha:
             continue
         if force:
