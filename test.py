@@ -12,21 +12,12 @@ gitbranchless = importlib.import_module("git-branchless")
 
 def test_create_branches(repo) -> None:
     a = repo.workdir / "a"
-    repo.git("add", write("a", "first change in a\n"))
-    repo.git("commit", "--message", "[a] a1")
-
-    repo.git("add", write("b", "created b\n"))
-    repo.git("commit", "--message", "[b] b1")
-
-    repo.git("commit", "--all", "--allow-empty", "--message", "WIP commit")
-
-    repo.git("add", write(a, "second change in a\n"))
-    repo.git("commit", "--message", "[a] a2")
-
-    repo.git("add", write(a, "third change in a\n"))
-    repo.git("commit", "--message", "[a] a3")
-
-    repo.git("commit", "--allow-empty", "--message", "another WIP commit")
+    repo.git("commit", "--allow-empty", "-m", "[a] a1")
+    repo.git("commit", "--allow-empty", "-m", "[b] b1")
+    repo.git("commit", "--allow-empty", "-m", "WIP commit")
+    repo.git("commit", "--allow-empty", "-m", "[a] a2")
+    repo.git("commit", "--allow-empty", "-m", "[a] a3")
+    repo.git("commit", "--allow-empty", "-m", "another WIP commit")
 
     expected = """\
 *  (HEAD -> 🐬) another WIP commit
@@ -79,12 +70,8 @@ def test_create_branches(repo) -> None:
 
 
 def test_create_branches_ambiguos_ref(repo) -> None:
-    a = repo.workdir / "a"
-
     repo.git("update-ref", "clash", "HEAD")
-
-    repo.git("add", write("a", ""))
-    repo.git("commit", "--message", "[clash] commit on branch")
+    repo.git("commit", "--allow-empty", "-m", "[clash] commit on branch")
 
     gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
 
@@ -114,7 +101,7 @@ def test_dwim(repo) -> None:
 
     def commit(contents):
         repo.git("add", write("a", contents))
-        repo.git("commit", "--message", contents)
+        repo.git("commit", "-m", contents)
 
     commit("onto")
     commit("2")
@@ -128,15 +115,15 @@ def test_dwim(repo) -> None:
     assert base_commit == repo.git("rev-parse", "🐬").decode()
 
 
-def test_parse_log_subjectRegex(repo) -> None:
+def test_parse_log_custom_topic_affixes(repo) -> None:
     repo.git("config", "branchless.subjectPrefixPrefix", r"")
     repo.git("config", "branchless.subjectPrefixSuffix", r":")
 
-    repo.git("commit", "--allow-empty", "--message", "a: a1")
-    repo.git("commit", "--allow-empty", "--message", "b: b1")
-    repo.git("commit", "--allow-empty", "--message", "b: b2")
-    repo.git("commit", "--allow-empty", "--message", "a: a2")
-    repo.git("commit", "--allow-empty", "--message", "c:a: c1")
+    repo.git("commit", "--allow-empty", "-m", "a: a1")
+    repo.git("commit", "--allow-empty", "-m", "b: b1")
+    repo.git("commit", "--allow-empty", "-m", "b: b2")
+    repo.git("commit", "--allow-empty", "-m", "a: a2")
+    repo.git("commit", "--allow-empty", "-m", "c:a: c1")
 
     commit_entries, dependency_graph = gitbranchless.parse_log(repo, INITIAL_COMMIT)
     assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
@@ -154,8 +141,8 @@ def test_parse_log_subjectRegex(repo) -> None:
 
 
 def test_parse_log_forward_dependency(repo) -> None:
-    repo.git("commit", "--allow-empty", "--message", "[a:b] a")
-    repo.git("commit", "--allow-empty", "--message", "[b] b")
+    repo.git("commit", "--allow-empty", "-m", "[a:b] a")
+    repo.git("commit", "--allow-empty", "-m", "[b] b")
     commit_entries, dependency_graph = gitbranchless.parse_log(repo, INITIAL_COMMIT)
     assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
         ("a", "a"),
@@ -206,8 +193,6 @@ def hermetic_seal(tmp_path_factory, monkeypatch):
             """
         ).encode()
     )
-
-    # Install our fake editor
     monkeypatch.setenv("GIT_EDITOR", "false")
 
     # Switch into a test workdir, and init our repo
