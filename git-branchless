@@ -12,50 +12,9 @@ from gitrevise.utils import EditorError
 from gitrevise.odb import Repository
 from gitrevise.merge import rebase, MergeConflict
 
-NAME = "git-branchless"
-
 USAGE = """\
-Create some commits with commit messages starting with `[<topic>] ` where
-`<topic>` is a valid branch name.  Then run `git branchless` to create a branch
-for each of those topics among commits in the range `@{upstream}..HEAD`.
-Each topic branch is the result of applying the topic's commits on top of
-`@{upstream}`.
-
-For example, if you have a history like
-
-    $ git log @{upstream}.. --format=%s
-    WIP unfinished commit
-    [some-unrelated-fix] Unrelated fix
-    [my-awesome-feature] Some more work on feature
-    [my-awesome-feature] Initial support for feature
-
-Then this command will create two branches:
-
-    $ git branchless
-    Updating refs/heads/my-awesome-feature (ba5e58a => 48a53fec)
-    Updating refs/heads/some-unrelated-fix (ba5e58a => e612f26e)
-
-    my-awesome-feature
-        9d33b57e Initial support for feature
-        48a53fec Some more work on feature
-
-    some-unrelated-fix
-        e612f26e Unrelated fix
-
-When you add another commit, or update a previous one, simply re-run `git
-branchless` to update the generated topic branches.
-
-Commits whose message does not start with a topic tag are ignored.
-
-If there is a merge conflict, you will be prompted to resolve it.
-To avoid conflicts, you can specify dependencies between branches.
-For example use `[child:parent1:parent2]` to base `child` off both `parent1`
-and `parent2`. The order here does not matter because it will be determined
-by which topic occurs first in the commit log.
-
-Instead of the default `[` and `]` guards, you can set Git configuration
-values `branchless.subjectPrefixPrefix` and `branchless.subjectPrefixSuffix`,
-respectively.
+Create branches for commits in @{upstream}..  if their commit message
+subject starts with [<topic>] where <topic> is the desired branch name.
 """
 
 SUBJECT_PREFIX_PREFIX = b"["
@@ -251,7 +210,7 @@ def create_branches(
         if head.tree() != topic_ref.target.tree() or new_messages != old_messages:
             topic_oid = topic_ref.target.oid
             print(f"Updating {topic_ref.name} ({topic_oid} => {head.oid})")
-            topic_ref.update(head, f"{NAME} rewrite")
+            topic_ref.update(head, "git-branchless rewrite")
 
         topics[topic] = topic_ref.target.oid
 
@@ -285,7 +244,7 @@ def dwim(repo: Repository) -> Tuple[str, str]:
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog=NAME,
+        prog="git branchless",
         description=USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
