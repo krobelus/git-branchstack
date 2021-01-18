@@ -96,13 +96,22 @@ def validate_cache(repo, topic_set, force):
             lambda line: line.split(), cache_path.read_bytes().decode().splitlines()
         )
     ]
+    existing_branches = {}
+    refs = repo.git(
+        "for-each-ref",
+        "--format",
+        "%(refname) %(objectname)",
+        *[f"refs/heads/{t[0]}" for t in cached_shas],
+    )
+    for line in refs.decode().splitlines():
+        refname, sha = line.split(" ", maxsplit=1)
+        existing_branches[refname.removeprefix("refs/heads/")] = sha
     for topic, cached_sha in cached_shas:
+        if topic not in existing_branches:
+            continue
         if topic not in topic_set:  # The user did not ask to create this branch.
             continue
-        branch_file = repo.gitdir / "refs/heads" / topic
-        if not branch_file.exists():
-            continue
-        current_sha = branch_file.read_bytes().decode().rstrip()
+        current_sha = existing_branches[topic]
         if current_sha == cached_sha:
             continue
         if force:
@@ -190,7 +199,7 @@ def create_branches(
 
             new_messages += [head.message]
         topic_fqn = f"refs/heads/{topic}"
-        if not (repo.gitdir / topic_fqn).exists():
+        if not repo.git("branch", "--list", topic):
             repo.git("branch", topic, base_commit)
         topic_ref = repo.get_commit_ref(topic_fqn)
 
