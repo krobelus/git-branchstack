@@ -81,6 +81,9 @@ def transitive_dependencies_rec(
 class BranchWasModifiedError(Exception):
     pass
 
+class TopicNotFoundError(Exception):
+    pass
+
 def validate_cache(repo, topic_set, force):
     cache_path = repo.gitdir / "branchless-cache"
     if not os.path.exists(cache_path):
@@ -150,6 +153,9 @@ def create_branches(
     topic_set = all_topics
 
     if branches:
+        for topic in branches:
+            if topic not in all_topics:
+                raise TopicNotFoundError(topic, base_commit)
         topic_set = set()
         for topic in branches:
             topic_set.add(topic)
@@ -284,6 +290,9 @@ def main(argv: Optional[List[str]] = None):
     except MergeConflict as err:
         print(f"merge conflict: {err}")
         sys.exit(1)
+    except TopicNotFoundError as err:
+        topic, base_commit = err.args
+        print(f"error: topic '{topic}' not found {base_commit}..")
     except ValueError as err:
         print(f"invalid value: {err}")
         sys.exit(1)

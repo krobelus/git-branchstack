@@ -114,6 +114,15 @@ def test_create_branches_carry_over_cache(repo) -> None:
         b"a",
     )
 
+def test_create_branches_invalid_topic(repo) -> None:
+    try:
+        gitbranchless.create_branches(
+            repo, "🐬", INITIAL_COMMIT, branches=("invalid-topic",)
+        )
+        assert False, "Expect error about missing topic"
+    except gitbranchless.TopicNotFoundError as e:
+        assert e.args == ("invalid-topic", INITIAL_COMMIT)
+
 def test_dwim(repo) -> None:
     origin = "origin.git"
     assert Popen(("git", "init", "--bare", origin)).wait() == 0
