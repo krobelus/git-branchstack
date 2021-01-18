@@ -9,7 +9,6 @@ import importlib
 
 gitbranchless = importlib.import_module("git-branchless")
 
-
 def test_create_branches(repo) -> None:
     a = repo.workdir / "a"
     repo.git("commit", "--allow-empty", "-m", "[a] a1")
@@ -68,7 +67,6 @@ def test_create_branches(repo) -> None:
     gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT, force=True)
     assert graph(repo, "a", "b") == expected
 
-
 def test_create_branches_ambiguos_ref(repo) -> None:
     repo.git("update-ref", "clash", "HEAD")
     repo.git("commit", "--allow-empty", "-m", "[clash] commit on branch")
@@ -82,7 +80,6 @@ def test_create_branches_ambiguos_ref(repo) -> None:
 *  本"""
 
     assert graph(repo, "refs/heads/clash") == expected
-
 
 def test_create_branches_stale_cache(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[lost-branch] subject")
@@ -102,7 +99,6 @@ def test_create_branches_stale_cache(repo) -> None:
     gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
     assert graph(repo, "lost-branch") == expected
 
-
 def test_create_branches_carry_over_cache(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[a] subject a")
     repo.git("commit", "--allow-empty", "-m", "[b] subject b")
@@ -118,7 +114,6 @@ def test_create_branches_carry_over_cache(repo) -> None:
         b"a",
     )
 
-
 def test_dwim(repo) -> None:
     origin = "origin.git"
     assert Popen(("git", "init", "--bare", origin)).wait() == 0
@@ -133,11 +128,9 @@ def test_dwim(repo) -> None:
     assert base_commit == "@{upstream}"
     root_id = repo.git("rev-parse", INITIAL_COMMIT).decode()
     assert repo.git("rev-parse", "@{upstream}").decode() == root_id
-
     def commit(contents):
         repo.git("add", write("a", contents))
         repo.git("commit", "-m", contents)
-
     commit("onto")
     commit("2")
     test_branch = "test-branch"
@@ -148,7 +141,6 @@ def test_dwim(repo) -> None:
     branch, base_commit = gitbranchless.dwim(repo)
     assert branch == "test-branch"
     assert base_commit == repo.git("rev-parse", "🐬").decode()
-
 
 def test_parse_log_custom_topic_affixes(repo) -> None:
     repo.git("config", "branchless.subjectPrefixPrefix", r"")
@@ -174,7 +166,6 @@ def test_parse_log_custom_topic_affixes(repo) -> None:
         "c": {"a"},
     }
 
-
 def test_parse_log_forward_dependency(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[a:b] a")
     repo.git("commit", "--allow-empty", "-m", "[b] b")
@@ -188,7 +179,6 @@ def test_parse_log_forward_dependency(repo) -> None:
         "b": set(),
     }
 
-
 def test_transitive_dependencies() -> None:
     dep_graph = {
         "a": {"c"},
@@ -196,7 +186,6 @@ def test_transitive_dependencies() -> None:
         "c": {"b"},
     }
     assert gitbranchless.transitive_dependencies(dep_graph, "a") == {"a", "b", "c"}
-
 
 # Taken from git-revise
 @pytest.fixture(autouse=True)
@@ -236,15 +225,11 @@ def hermetic_seal(tmp_path_factory, monkeypatch):
     assert Popen(("git", "init", "-q")).wait() == 0
     assert Popen(("git", "commit", "--allow-empty", "-m", "本")).wait() == 0
 
-
 INITIAL_COMMIT = ":/本"
-
-
 @pytest.fixture
 def repo(hermetic_seal):
     with Repository() as repo:
         yield repo
-
 
 def graph(repo, *args) -> str:
     output = repo.git(
@@ -257,7 +242,6 @@ def graph(repo, *args) -> str:
         "--",
     ).decode()
     return "\n".join(line.rstrip() for line in output.splitlines())
-
 
 def write(filename, contents) -> str:
     with open(filename, "w") as f:

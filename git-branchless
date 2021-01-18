@@ -22,7 +22,6 @@ SUBJECT_PREFIX_SUFFIX = b"]"
 
 CommitEntries = List[Tuple[str, str, str]]
 
-
 def parse_log(repo, base_commit) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
     commit_entries = []
     dependency_graph: Dict[str, Set[str]] = {}
@@ -65,12 +64,10 @@ def parse_log(repo, base_commit) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
 
     return commit_entries, dependency_graph
 
-
 def transitive_dependencies(depgraph: Dict[str, Set[str]], node: str) -> Set[str]:
     visited: Set[str] = set()
     transitive_dependencies_rec(depgraph, node, visited)
     return visited
-
 
 def transitive_dependencies_rec(
     depgraph: Dict[str, Set[str]], node: str, visited: Set[str]
@@ -81,10 +78,8 @@ def transitive_dependencies_rec(
     for x in depgraph.get(node, ()):
         transitive_dependencies_rec(depgraph, x, visited)
 
-
 class BranchWasModifiedError(Exception):
     pass
-
 
 def validate_cache(repo, topic_set, force):
     cache_path = repo.gitdir / "branchless-cache"
@@ -119,7 +114,6 @@ def validate_cache(repo, topic_set, force):
         else:
             raise BranchWasModifiedError(topic)
 
-
 def update_cache(repo, topics):
     cache_path = repo.gitdir / "branchless-cache"
     mode = "r+" if cache_path.exists() else "w+"
@@ -140,19 +134,16 @@ def update_cache(repo, topics):
         f.truncate()
         f.write(new_content)
 
-
 def create_branches(
     repo, current_branch, base_commit, branches=None, force=False
 ) -> None:
     commit_entries, dependency_graph = parse_log(repo, base_commit)
-
     def by_first_commit_on_topic(commit_entry):
         (commit, topic, subject) = commit_entry
         for i in range(len(commit_entries)):
             if commit_entries[i][1] == topic:
                 return i
         return -1
-
     commit_entries.sort(key=by_first_commit_on_topic)
     topics = {commit_entry[1]: None for commit_entry in commit_entries}
     all_topics = set(topics)
@@ -234,7 +225,6 @@ def create_branches(
         ):
             print("\t", line)
 
-
 def dwim(repo: Repository) -> Tuple[str, str]:
     root = Path(repo.git("rev-parse", "--show-toplevel").decode().strip())
     rebase_dir = root / ".git/rebase-merge"
@@ -249,7 +239,6 @@ def dwim(repo: Repository) -> Tuple[str, str]:
         base_commit = "@{upstream}"
 
     return branch, base_commit
-
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
@@ -272,7 +261,6 @@ def parser() -> argparse.ArgumentParser:
     )
 
     return p
-
 
 def main(argv: Optional[List[str]] = None):
     args = parser().parse_args(argv)
@@ -299,7 +287,6 @@ def main(argv: Optional[List[str]] = None):
     except ValueError as err:
         print(f"invalid value: {err}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
