@@ -20,9 +20,12 @@ prefix=$(git config branchless.subjectPrefixPrefix || echo [)
 suffix=$(git config branchless.subjectPrefixSuffix || echo ])
 
 cherries=$(
-	git log --reverse --format="pick %h $prefix${topic}$suffix %s" .."$ref_with_remote" 2>/dev/null
+	git log --reverse --format="pick %h $prefix${topic}$suffix %s" .."$ref_with_remote"
 )
-test "$cherries" || usage
+if ! [ "$cherries" ]; then
+	echo "Nothing to cherry-pick from ..$ref_with_remote"
+	exit 0
+fi
 
 todo=$(IFS='
 '
