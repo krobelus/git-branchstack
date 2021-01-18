@@ -53,7 +53,7 @@ Then this command will create two branches:
 
     $ git branchless
     $ git log --all --graph --oneline
-    * 2708e12 (HEAD -> local-branch) [my-awesome-feature] Initial support for feature
+    * 2708e12 (HEAD) [my-awesome-feature] Initial support for feature
     * c6dd3ab [my-awesome-feature] Some more work on feature
     * 683de4b [some-unrelated-fix] Unrelated fix
     * 3eee379 Local commit
