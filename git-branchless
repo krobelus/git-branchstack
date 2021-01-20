@@ -231,14 +231,11 @@ def create_branches(
             print("\t", line)
 
 def dwim(repo: Repository) -> Tuple[str, str]:
-    root = Path(repo.git("rev-parse", "--show-toplevel").decode().strip())
-    rebase_dir = root / ".git/rebase-merge"
+    rebase_dir = repo.gitdir / "rebase-merge"
 
     if os.path.exists(rebase_dir):
-        with open(rebase_dir / "head-name") as f:
-            branch = os.path.basename(f.read().strip())
-        with open(rebase_dir / "onto") as f:
-            base_commit = f.read().strip()
+        branch = os.path.basename((rebase_dir / "head-name").read_text().strip())
+        base_commit = os.path.basename((rebase_dir / "onto").read_text().strip())
     else:
         branch = repo.git("symbolic-ref", "--short", "HEAD").decode()
         base_commit = "@{upstream}"
