@@ -11,16 +11,15 @@ some advantages.
 
 Git already supports this workflow via [git format-patch] and [git send-email],
 however, many projects prefer to receive patches as pull requests.  To make
-proposed changes easy to review, you'll want to submit a separate pull request
-for each independent change.  With a branchless workflow, the sole local branch
-typically contains multiple independent changes. To submit those upstream as
-pull requests, you need to create a separate topic branch for each change.
-Running `git branchless` creates the desired topic branches without requiring
-you to switch back and forth between branches. This allows you to submit small
-pull requests while enjoying the benefits of a branchless workflow. After
-making any changes to your branch (for example by addressing review comments
-or rebasing on upstream changes) you can trivially update the generated
-topic branches: just re-run `git branchless`.
+proposed changes easy to review, you'll want to submit a separate pull
+request for each independent change.  With a branchless workflow, the sole
+local branch typically contains multiple independent changes. To submit
+those upstream as pull requests, you need to create a separate branch for
+each change.  Running `git branchless` creates the desired branches without
+requiring you to switch back and forth between branches. This allows you
+to submit small pull requests while enjoying the benefits of a branchless
+workflow. After making any changes to your worktree's branch you can easily
+update the generated branches: just re-run `git branchless`.
 
 ## Installation
 
@@ -43,20 +42,21 @@ Each topic branch is the result of applying the topic's commits on top of
 
 For example, if you have a history like
 
-    $ git log @{upstream}.. --format=%s
-    Local commit
-    [some-unrelated-fix] Unrelated fix
-    [my-awesome-feature] Some more work on feature
+    $ git log :/'Initial commit'.. --format=%s
     [my-awesome-feature] Initial support for feature
+    [my-awesome-feature] Some more work on feature
+    [some-unrelated-fix] Unrelated fix
+    Local commit without topic tag
 
-Then this command will create two branches:
+Then this command will create or update two branches that branch away
+from HEAD:
 
     $ git branchless
     $ git log --all --graph --oneline
     * 2708e12 (HEAD) [my-awesome-feature] Initial support for feature
     * c6dd3ab [my-awesome-feature] Some more work on feature
     * 683de4b [some-unrelated-fix] Unrelated fix
-    * 3eee379 Local commit
+    * 3eee379 Local commit without topic tag
     | * 7645890 (my-awesome-feature) Initial support for feature
     | * e420fd6 Some more work on feature
     |/
@@ -64,10 +64,7 @@ Then this command will create two branches:
     |/
     * 2ec4d51 Initial commit
 
-When you add another commit, or update a previous one, simply re-run `git
-branchless` to update the generated topic branches.
-
-Commits whose message does not start with a topic tag are ignored.
+`git branchless` ignores commits whose subject does not start with a topic tag.
 
 If there is a merge conflict, you will be prompted to resolve it.
 To avoid conflicts, you can specify dependencies between branches.
@@ -75,9 +72,9 @@ For example use `[child:parent1:parent2]` to base `child` off both `parent1`
 and `parent2`. The order here does not matter because it will be determined
 by which topic occurs first in the commit log.
 
-Instead of the default `[` and `]` guards, you can set Git configuration
-values `branchless.subjectPrefixPrefix` and `branchless.subjectPrefixSuffix`,
-respectively.
+Instead of the default topic tag delimiters (`[` and `]`), you can
+set Git configuration values `branchless.subjectPrefixPrefix` and
+`branchless.subjectPrefixSuffix`, respectively.
 
 ## Integrating commits from other branches
 
@@ -89,11 +86,12 @@ $ ln -s $PWD/git-branchless-pick ~/bin/
 $ git branchless-pick some-branch 
 ```
 
-This cherry-picks all missing commits from that branch, prefixed with
-`[some-branch] `.  Old commits are dropped, so this allows you to quickly
-update to the latest upstream version of a ref.
+This starts an interactive rebase, prompting you to cherry-pick all missing
+commits from that branch, prefixing their commit subjects with `[some-branch]`.
+Old commits with such a subject are dropped, so this allows you to quickly
+update to the latest upstream version of a ref that has been force-pushed.
 
-Here's how you would integrate that with GitHub pull requests:
+Here's how you would use this to cherry-pick GitHub pull requests:
 
 ```sh
 $ git config remote.origin.fetch '+refs/pull/*/head:refs/remotes/origin/pr-*'
@@ -103,20 +101,21 @@ $ git branchless-pick origin/pr-123
 
 ## Tips
 
-You can use [git revise] to efficiently modify your commit messages to
-contain the `[topic]` tags. This command lets you edit all commit messages in
+You can use [git revise] to efficiently modify your commit messages to contain
+the `[<topic>]` tags. This command lets you edit all commit messages in
 `@{upstream}..HEAD`.
 
 ```sh
 $ git revise --interactive --edit
 ```
+
 Like `git revise`, you can use `git branchless` during an interactive rebase.
 
 ## Contributing
 
 You're welcome give feedback on the public mailing list by sending email
 to <mailto:~krobelus/git-branchless@lists.sr.ht>.  To see prior postings,
-visit the [mailing list archive](https://lists.sr.ht/~krobelus/git-branchless).
+visit the [list archive](https://lists.sr.ht/~krobelus/git-branchless).
 
 [Git]: <https://git-scm.com/>
 [git revise]: <https://github.com/mystor/git-revise/>
