@@ -98,12 +98,12 @@ def validate_cache(repo, topic_set, force):
     refs = repo.git(
         "for-each-ref",
         "--format",
-        "%(refname) %(objectname)",
+        "%(refname:short) %(objectname)",
         *[f"refs/heads/{t[0]}" for t in cached_shas],
     )
     for line in refs.decode().splitlines():
         refname, sha = line.split(" ", maxsplit=1)
-        existing_branches[refname.removeprefix("refs/heads/")] = sha
+        existing_branches[refname] = sha
     for topic, cached_sha in cached_shas:
         if topic not in existing_branches:
             continue
