@@ -22,11 +22,11 @@ SUBJECT_PREFIX_SUFFIX = b"]"
 
 CommitEntries = List[Tuple[str, str, str]]
 
-def parse_log(repo, base_commit) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
+def parse_log(repo, base_commit, tip) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
     commit_entries = []
     dependency_graph: Dict[str, Set[str]] = {}
     patches = (
-        repo.git("log", f"{base_commit}..HEAD", "--reverse", "--format=%H %s")
+        repo.git("log", f"{base_commit}..{tip}", "--reverse", "--format=%H %s")
         .decode()
         .splitlines()
     )
@@ -79,6 +79,9 @@ def transitive_dependencies_rec(
         transitive_dependencies_rec(depgraph, x, visited)
 
 class BranchWasModifiedError(Exception):
+    pass
+
+class InvalidRangeError(Exception):
     pass
 
 class TopicNotFoundError(Exception):
@@ -138,9 +141,9 @@ def update_cache(repo, topics):
         f.write(new_content)
 
 def create_branches(
-    repo, current_branch, base_commit, branches=None, force=False
+    repo, current_branch, base_commit, tip="HEAD", branches=None, force=False
 ) -> None:
-    commit_entries, dependency_graph = parse_log(repo, base_commit)
+    commit_entries, dependency_graph = parse_log(repo, base_commit, tip)
     def by_first_commit_on_topic(commit_entry):
         (commit, topic, subject) = commit_entry
         for i in range(len(commit_entries)):
@@ -155,7 +158,7 @@ def create_branches(
     if branches:
         for topic in branches:
             if topic not in all_topics:
-                raise TopicNotFoundError(topic, base_commit)
+                raise TopicNotFoundError(topic, base_commit, tip)
         topic_set = set()
         for topic in branches:
             topic_set.add(topic)
@@ -166,7 +169,7 @@ def create_branches(
             if parent not in all_topics:
                 print(f"Warning: topic '{child}' depends on missing topic '{parent}'.")
 
-    assert current_branch not in set(
+    assert current_branch is None or current_branch not in set(
         topics
     ), f"Refusing to overwrite current branch {current_branch}"
 
@@ -224,7 +227,7 @@ def create_branches(
     for topic in topics:
         print(topic)
         for line in (
-            repo.git("log",f"{base_commit}..refs/heads/{topic}",  "--oneline")
+            repo.git("log", f"{base_commit}..refs/heads/{topic}", "--oneline")
             .decode()
             .splitlines()
         ):
@@ -262,15 +265,38 @@ def parser() -> argparse.ArgumentParser:
         help="overwrite branches even if they were modified since the last run",
     )
 
+    p.add_argument(
+        "--range",
+        "-r",
+        metavar="<rev1>..<rev2>",
+        help="use commits from the given range instead of @{upstream}..",
+    )
+
     return p
+
+def parse_range(repo: Repository, range: str) -> Tuple[str, str]:
+    if ".." not in range:
+        raise InvalidRangeError(range)
+    upper, lower = repo.git("rev-parse", range).decode().splitlines()
+    assert lower.startswith("^")
+    return lower[len("^") :], upper
 
 def main(argv: Optional[List[str]] = None):
     args = parser().parse_args(argv)
     try:
         with Repository() as repo:
-            branch, base_commit = dwim(repo)
+            if args.range is None:
+                branch, base_commit, tip = dwim(repo)
+            else:
+                branch = None
+                base_commit, tip = parse_range(repo, args.range)
             create_branches(
-                repo, branch, base_commit, getattr(args, "<topic>"), force=args.force
+                repo,
+                branch,
+                base_commit,
+                tip,
+                getattr(args, "<topic>"),
+                force=args.force,
             )
     except BranchWasModifiedError as err:
         print(
@@ -282,6 +308,9 @@ def main(argv: Optional[List[str]] = None):
         sys.exit(1)
     except EditorError as err:
         print(f"editor error: {err}")
+        sys.exit(1)
+    except InvalidRangeError as err:
+        print(f'invalid commit range: {err} should be a valid "a..b" range')
         sys.exit(1)
     except MergeConflict as err:
         print(f"merge conflict: {err}")

@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- Allow passing a custom range with -r to override @{upstream}..
 
 ## [0.0.2] - 2021-01-21
 - Fix error when previously generated branch was deleted

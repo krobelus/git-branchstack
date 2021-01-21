@@ -121,7 +121,15 @@ def test_create_branches_invalid_topic(repo) -> None:
         )
         assert False, "Expect error about missing topic"
     except gitbranchless.TopicNotFoundError as e:
-        assert e.args == ("invalid-topic", INITIAL_COMMIT)
+        assert e.args == ("invalid-topic", INITIAL_COMMIT, "HEAD")
+
+def test_create_branches_custom_range(repo) -> None:
+    repo.git("commit", "--allow-empty", "-m", "[a] subject a")
+    repo.git("commit", "--allow-empty", "-m", "[b] subject b")
+
+    gitbranchless.create_branches(repo, "🐬", "HEAD~2", "HEAD~")
+    assert repo.git("branch", "--list", "a")
+    assert not repo.git("branch", "--list", "b")
 
 def test_dwim(repo) -> None:
     origin = "origin.git"
@@ -161,7 +169,9 @@ def test_parse_log_custom_topic_affixes(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "a: a2")
     repo.git("commit", "--allow-empty", "-m", "c:a: c1")
 
-    commit_entries, dependency_graph = gitbranchless.parse_log(repo, INITIAL_COMMIT)
+    commit_entries, dependency_graph = gitbranchless.parse_log(
+        repo, INITIAL_COMMIT, "HEAD"
+    )
     assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
         ("a", "a1"),
         ("b", "b1"),
@@ -178,7 +188,9 @@ def test_parse_log_custom_topic_affixes(repo) -> None:
 def test_parse_log_forward_dependency(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[a:b] a")
     repo.git("commit", "--allow-empty", "-m", "[b] b")
-    commit_entries, dependency_graph = gitbranchless.parse_log(repo, INITIAL_COMMIT)
+    commit_entries, dependency_graph = gitbranchless.parse_log(
+        repo, INITIAL_COMMIT, "HEAD"
+    )
     assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
         ("a", "a"),
         ("b", "b"),
