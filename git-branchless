@@ -286,7 +286,8 @@ def main(argv: Optional[List[str]] = None):
     try:
         with Repository() as repo:
             if args.range is None:
-                branch, base_commit, tip = dwim(repo)
+                branch, base_commit = dwim(repo)
+                tip = "HEAD"
             else:
                 branch = None
                 base_commit, tip = parse_range(repo, args.range)
