@@ -6,7 +6,7 @@
 
 Sometimes I am working on multiple unrelated changes to a [Git]
 repository. Instead of checking out a separate branch for each change,
-I prefer to do most of my work on a single branch. This [blog post] list
+I prefer to do most of my work on a single branch. This [blog post] lists
 some advantages.
 
 Git already supports this workflow via [git format-patch] and [git send-email],
