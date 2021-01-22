@@ -141,7 +141,13 @@ def update_cache(repo, topics):
         f.write(new_content)
 
 def create_branches(
-    repo, current_branch, base_commit, tip="HEAD", branches=None, force=False
+    repo,
+    current_branch,
+    base_commit,
+    tip="HEAD",
+    branches=None,
+    force=False,
+    trim_subject=False,
 ) -> None:
     commit_entries, dependency_graph = parse_log(repo, base_commit, tip)
     def by_first_commit_on_topic(commit_entry):
@@ -175,24 +181,29 @@ def create_branches(
 
     validate_cache(repo, topic_set, force)
 
+    def trimmed_message(subject: str, message: bytes) -> str:
+        body = b"\n".join(message.split(b"\n", maxsplit=1)[1:])
+        return subject.encode() + b"\n" + body
+
     base_commit_id = repo.git("rev-parse", base_commit).decode()
     for topic in topics:
         head = repo.get_commit(base_commit_id)
         deps = transitive_dependencies(dependency_graph, topic)
         new_messages = []
-        for commit, t, commit_subject in commit_entries:
+        for commit, t, subject in commit_entries:
             if t not in deps or t == topic:
                 continue
             patch = repo.get_commit(commit)
             match = None
-            new_messages += [patch.message]
             head = rebase(patch, head)
+            if trim_subject:
+                head = head.update(message=trimmed_message(subject, patch.message))
+            new_messages += [head.message]
         for commit, t, subject in commit_entries:
             if t != topic:
                 continue
             patch = repo.get_commit(commit)
-            body = b"\n".join(patch.message.split(b"\n", maxsplit=1)[1:])
-            message = subject.encode() + b"\n" + body
+            message = trimmed_message(subject, patch.message)
 
             head = rebase(patch, head)
             head = head.update(message=message)
@@ -272,6 +283,13 @@ def parser() -> argparse.ArgumentParser:
         help="use commits from the given range instead of @{upstream}..",
     )
 
+    p.add_argument(
+        "--trim-subject",
+        "-t",
+        action="store_true",
+        help="trim topic from all commit message subjects, not just leaf topics",
+    )
+
     return p
 
 def parse_range(repo: Repository, range: str) -> Tuple[str, str]:
@@ -298,6 +316,7 @@ def main(argv: Optional[List[str]] = None):
                 tip,
                 getattr(args, "<topic>"),
                 force=args.force,
+                trim_subject=args.trim_subject,
             )
     except BranchWasModifiedError as err:
         print(

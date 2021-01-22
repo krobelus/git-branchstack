@@ -131,6 +131,22 @@ def test_create_branches_custom_range(repo) -> None:
     assert repo.git("branch", "--list", "a")
     assert not repo.git("branch", "--list", "b")
 
+def test_create_branches_remove_tags(repo) -> None:
+    repo.git("commit", "--allow-empty", "-m", "[b] subject b")
+    repo.git("commit", "--allow-empty", "-m", "[a:b] subject a")
+
+    gitbranchless.create_branches(repo, None, INITIAL_COMMIT, "HEAD")
+    assert (
+        repo.git("log", "--format=%s", f"{INITIAL_COMMIT}..a").decode()
+        == "subject a\n" + "[b] subject b"
+    )
+
+    gitbranchless.create_branches(repo, None, INITIAL_COMMIT, "HEAD", trim_subject=True)
+    assert (
+        repo.git("log", "--format=%s", f"{INITIAL_COMMIT}..a").decode()
+        == "subject a\n" + "subject b"
+    )
+
 def test_dwim(repo) -> None:
     origin = "origin.git"
     assert Popen(("git", "init", "--bare", origin)).wait() == 0
