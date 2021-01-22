@@ -191,23 +191,12 @@ def create_branches(
         deps = transitive_dependencies(dependency_graph, topic)
         new_messages = []
         for commit, t, subject in commit_entries:
-            if t not in deps or t == topic:
+            if t not in deps:
                 continue
             patch = repo.get_commit(commit)
-            match = None
             head = rebase(patch, head)
-            if trim_subject:
+            if trim_subject or t == topic:
                 head = head.update(message=trimmed_message(subject, patch.message))
-            new_messages += [head.message]
-        for commit, t, subject in commit_entries:
-            if t != topic:
-                continue
-            patch = repo.get_commit(commit)
-            message = trimmed_message(subject, patch.message)
-
-            head = rebase(patch, head)
-            head = head.update(message=message)
-
             new_messages += [head.message]
         topic_fqn = f"refs/heads/{topic}"
         if not repo.git("branch", "--list", topic):
