@@ -94,7 +94,7 @@ update to the latest upstream version of a ref that has been force-pushed.
 Here's how you would use this to cherry-pick GitHub pull requests:
 
 ```sh
-$ git config remote.origin.fetch '+refs/pull/*/head:refs/remotes/origin/pr-*'
+$ git config --add remote.origin.fetch '+refs/pull/*/head:refs/remotes/origin/pr-*'
 $ git fetch origin
 $ git branchless-pick origin/pr-123
 ```
