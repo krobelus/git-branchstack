@@ -44,7 +44,6 @@ GIT_SEQUENCE_EDITOR='
 		use Env;
 		if (m/^pick \S+ \Q$prefix$topic$suffix /) { s/^pick/drop/; }
 		elsif (!$todo or !m/^$/) { next; }
-		$_ = $todo . "\n" . $_;
-		$todo = "";
+		if ($todo) { $_ = $todo . "\n" . $_; $todo = ""; }
 		END { exec "$editor .git/rebase-merge/git-rebase-todo"; }
 	'\''' git rebase -i --no-autosquash "$@"
