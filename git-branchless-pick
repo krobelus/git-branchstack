@@ -42,8 +42,12 @@ topic=$topic prefix=$prefix suffix=$suffix \
 GIT_SEQUENCE_EDITOR='
 	perl -pi -e '\''
 		use Env;
-		if (m/^pick \S+ \Q$prefix$topic$suffix /) { s/^pick/drop/; }
-		elsif (!$todo or !m/^$/) { next; }
-		if ($todo) { $_ = $todo . "\n" . $_; $todo = ""; }
+		if (m/^pick \S+ \Q$prefix$topic$suffix /) {
+			s/^pick/drop/;
+			$dropped_any = 1;
+		} elsif ($todo and ($dropped_any or m/^$/)) {
+			$_ = $todo . "\n" . $_;
+			$todo = "";
+		}
 		END { exec "$editor .git/rebase-merge/git-rebase-todo"; }
 	'\''' git rebase -i --no-autosquash "$@"

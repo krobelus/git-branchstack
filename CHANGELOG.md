@@ -3,6 +3,8 @@
 ## [Unreleased]
 - Allow passing a custom range with -r to override @{upstream}..
 - Allow dropping topic tags from subject with -t/--trim-subject
+- git-branchless-pick inserts new commits in the rebase-todo list
+  immediately after dropped commits, instead of before them
 
 ## [0.0.2] - 2021-01-21
 - Fix error when previously generated branch was deleted
