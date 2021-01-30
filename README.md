@@ -24,7 +24,12 @@ update the generated branches: just re-run `git branchless`.
 ## Installation
 
 1. Make sure you have Python 3.6 or higher.
-2. Install [git revise].
+2. Install [git revise]. Currently the latest development version is required:
+
+   ```sh
+   $ pip install git+https://github.com/mystor/git-revise.git@543863fa994afe8304b4afa34e4c37abf35a52ff
+   ```
+
 3. Add `git branchless` to your `$PATH`:
 
    ```sh
