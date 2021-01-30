@@ -264,6 +264,8 @@ def override_merge_blobs(
         # No conflicts.
         return Blob(repo, merged)
 
+    path = path.relative_to("/")
+
     # At this point, we know that there are merge conflicts to resolve.
     # Prompt to try and trigger manual resolution.
     print(f"Conflict applying '{labels[2]}'")
@@ -281,7 +283,7 @@ def override_merge_blobs(
 
     # Open the editor on the conflicted file. We ensure the relative path
     # matches the path of the original file for a better editor experience.
-    conflicts = tmpdir / "conflict" / path.relative_to("/")
+    conflicts = tmpdir / "conflict" / path
     conflicts.parent.mkdir(parents=True, exist_ok=True)
     conflicts.write_bytes(preimage)
     merged = utils.edit_file(repo, conflicts)
