@@ -71,11 +71,16 @@ from HEAD:
 
 `git branchless` ignores commits whose subject does not start with a topic tag.
 
-If there is a merge conflict, you will be prompted to resolve it.
 To avoid conflicts, you can specify dependencies between branches.
 For example use `[child:parent1:parent2]` to base `child` off both `parent1`
 and `parent2`. The order here does not matter because it will be determined
 by which topic occurs first in the commit log.
+
+If there is a merge conflict when trying to apply a commit, you will be
+shown potentially missing dependencies. Add the missing dependencies or
+resolve the conflict. The conflict resolution will be remembered if you
+enable `git rerere` support in `git revise` (set `rerere.enabled` and
+`rerere.autoUpdate` to true).
 
 Instead of the default topic tag delimiters (`[` and `]`), you can
 set Git configuration values `branchless.subjectPrefixPrefix` and

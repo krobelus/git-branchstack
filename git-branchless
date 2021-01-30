@@ -196,6 +196,16 @@ def create_branches(
             if t not in deps:
                 continue
             patch = repo.get_commit(commit)
+            def on_conflict(path):
+                '''
+                Some commit in "base_commit..commit~" must have touched the
+                path as well, but is not among our dependencies.
+                '''
+                print("Missing dependency on one of the commits below?")
+                log = repo.git("log", f"{base_commit}..{commit}~", "--format=\t%h %s", "--", path).decode()
+                print(log)
+            global ON_CONFLICT
+            ON_CONFLICT = on_conflict
             head = rebase(patch, head)
             if trim_subject or t == topic:
                 head = head.update(message=trimmed_message(subject, patch.message))
@@ -235,6 +245,8 @@ def create_branches(
         ):
             print("\t", line)
 
+ON_CONFLICT = None
+
 def override_merge_blobs(
     path: Path,
     labels: Tuple[str, str, str],
@@ -270,6 +282,8 @@ def override_merge_blobs(
     # Prompt to try and trigger manual resolution.
     print(f"Conflict applying '{labels[2]}'")
     print(f"  Path: '{path}'")
+
+    ON_CONFLICT(path)
 
     preimage = merged
     (normalized_preimage, conflict_id, merged_blob) = merge.replay_recorded_resolution(

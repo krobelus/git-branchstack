@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 - BREAKING: the latest version of git-revise is now required, see README
+- On conflict, show commits that are likely missing as dependencies
 - Allow passing a custom range with -r to override @{upstream}..
 - Allow dropping topic tags from subject with -t/--trim-subject
 - git-branchless-pick inserts new commits in the rebase-todo list
