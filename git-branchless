@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import re
 import sys
 from typing import Dict, Optional, List, Set, Tuple
 from pathlib import Path
@@ -142,6 +141,10 @@ def update_cache(repo, topics):
         f.truncate()
         f.write(new_content)
 
+def trimmed_message(subject: str, message: bytes) -> str:
+    body = b"\n".join(message.split(b"\n", maxsplit=1)[1:])
+    return subject.encode() + b"\n" + body
+
 def create_branches(
     repo,
     current_branch,
@@ -181,60 +184,14 @@ def create_branches(
         topics
     ), f"Refusing to overwrite current branch {current_branch}"
 
-    validate_cache(repo, topic_set, force)
-
-    def trimmed_message(subject: str, message: bytes) -> str:
-        body = b"\n".join(message.split(b"\n", maxsplit=1)[1:])
-        return subject.encode() + b"\n" + body
-
     base_commit_id = repo.git("rev-parse", base_commit).decode()
-    for topic in topics:
-        head = repo.get_commit(base_commit_id)
-        deps = transitive_dependencies(dependency_graph, topic)
-        new_messages = []
-        for commit, t, subject in commit_entries:
-            if t not in deps:
-                continue
-            patch = repo.get_commit(commit)
-            def on_conflict(path):
-                '''
-                Some commit in "base_commit..commit~" must have touched the
-                path as well, but is not among our dependencies.
-                '''
-                print("Missing dependency on one of the commits below?")
-                log = repo.git("log", f"{base_commit}..{commit}~", "--format=\t%h %s", "--", path).decode()
-                print(log)
-            global ON_CONFLICT
-            ON_CONFLICT = on_conflict
-            head = rebase(patch, head)
-            if trim_subject or t == topic:
-                head = head.update(message=trimmed_message(subject, patch.message))
-            new_messages += [head.message]
-        topic_fqn = f"refs/heads/{topic}"
-        if not repo.git("branch", "--list", topic):
-            repo.git("branch", topic, base_commit)
-        topic_ref = repo.get_commit_ref(topic_fqn)
 
-        old_commits = (
-            repo.git(
-                "log",
-                f"{base_commit}..{topic_fqn}",
-                "--reverse",
-                "--format=%H",
-            )
-            .decode()
-            .splitlines()
-        )
-        old_messages = [repo.get_commit(commit).message for commit in old_commits]
-
-        if head.tree() != topic_ref.target.tree() or new_messages != old_messages:
-            topic_oid = topic_ref.target.oid
-            print(f"Updating {topic_ref.name} ({topic_oid} => {head.oid})")
-            topic_ref.update(head, "git-branchless rewrite")
-
-        topics[topic] = topic_ref.target.oid
-
-    update_cache(repo, topics)
+    validate_cache(repo, topic_set, force)
+    try:
+        for topic in topics:
+            create_branch(repo, trim_subject, base_commit_id, commit_entries, topics, dependency_graph, topic)
+    finally:
+        update_cache(repo, topics)
 
     for topic in topics:
         print(topic)
@@ -244,6 +201,52 @@ def create_branches(
             .splitlines()
         ):
             print("\t", line)
+
+def create_branch(repo, trim_subject, base_commit_id, commit_entries, topics, dependency_graph, topic):
+    head = repo.get_commit(base_commit_id)
+    deps = transitive_dependencies(dependency_graph, topic)
+    new_messages = []
+    for commit, t, subject in commit_entries:
+        if t not in deps:
+            continue
+        patch = repo.get_commit(commit)
+        def on_conflict(path):
+            '''
+            Some commit in "base_commit..commit~" must have touched the
+            path as well, but is not among our dependencies.
+            '''
+            print("Missing dependency on one of the commits below?")
+            log = repo.git("log", f"{base_commit_id}..{commit}~", "--format=\t%h %s", "--", path).decode()
+            print(log)
+        global ON_CONFLICT
+        ON_CONFLICT = on_conflict
+        head = rebase(patch, head)
+        if trim_subject or t == topic:
+            head = head.update(message=trimmed_message(subject, patch.message))
+        new_messages += [head.message]
+    topic_fqn = f"refs/heads/{topic}"
+    if not repo.git("branch", "--list", topic):
+        repo.git("branch", topic, base_commit_id)
+    topic_ref = repo.get_commit_ref(topic_fqn)
+
+    old_commits = (
+        repo.git(
+            "log",
+            f"{base_commit_id}..{topic_fqn}",
+            "--reverse",
+            "--format=%H",
+        )
+        .decode()
+        .splitlines()
+    )
+    old_messages = [repo.get_commit(commit).message for commit in old_commits]
+
+    if head.tree() != topic_ref.target.tree() or new_messages != old_messages:
+        topic_oid = topic_ref.target.oid
+        print(f"Updating {topic_ref.name} ({topic_oid} => {head.oid})")
+        topic_ref.update(head, "git-branchless rewrite")
+
+    topics[topic] = topic_ref.target.oid
 
 ON_CONFLICT = None
 

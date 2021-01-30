@@ -3,8 +3,10 @@
 ## [Unreleased]
 - BREAKING: the latest version of git-revise is now required, see README
 - On conflict, show commits that are likely missing as dependencies
-- Allow passing a custom range with -r to override @{upstream}..
+- Allow passing a custom range with -r to override @{upstream}..HEAD
 - Allow dropping topic tags from subject with -t/--trim-subject
+- Fixed a case of mistakenly refusing to overwrite branches after
+  cancelling a previous run (usually on conflict)
 - git-branchless-pick inserts new commits in the rebase-todo list
   immediately after dropped commits, instead of before them
 
