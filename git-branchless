@@ -6,7 +6,7 @@ import re
 import sys
 from typing import Dict, Optional, List, Set, Tuple
 from pathlib import Path
-from subprocess import CalledProcessError, PIPE, Popen
+from subprocess import CalledProcessError
 
 import gitrevise
 from gitrevise import merge, utils
@@ -33,11 +33,11 @@ def parse_log(repo, base_commit, tip) -> Tuple[CommitEntries, Dict[str, Set[str]
         .splitlines()
     )
     prefix_prefix = repo.config(
-        f"branchless.subjectPrefixPrefix",
+        "branchless.subjectPrefixPrefix",
         default=SUBJECT_PREFIX_PREFIX,
     ).decode()
     prefix_suffix = repo.config(
-        f"branchless.subjectPrefixSuffix",
+        "branchless.subjectPrefixSuffix",
         default=SUBJECT_PREFIX_SUFFIX,
     ).decode()
     for line in patches:
