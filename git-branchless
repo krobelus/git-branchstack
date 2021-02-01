@@ -44,7 +44,6 @@ def parse_log(repo, prefix_prefix, prefix_suffix, base_commit, tip) -> Tuple[Com
         topic = topic_with_parents[0]
         parent_topics = [t for t in topic_with_parents[1:] if t]
 
-        # An empty topic means to reuse the previous topic.
         if not topic:
             continue
 
