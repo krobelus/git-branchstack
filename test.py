@@ -188,7 +188,7 @@ def test_parse_log_custom_topic_affixes(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "c:a: c1")
 
     commit_entries, dependency_graph = gitbranchless.parse_log(
-        repo, prefix, suffix, INITIAL_COMMIT, "HEAD"
+        repo, prefix, suffix, f"{INITIAL_COMMIT}..HEAD", "--reverse"
     )
     assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
         ("a", "a1"),
@@ -207,7 +207,7 @@ def test_parse_log_forward_dependency(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[a:b] a")
     repo.git("commit", "--allow-empty", "-m", "[b] b")
     commit_entries, dependency_graph = gitbranchless.parse_log(
-        repo, "[", "]", INITIAL_COMMIT, "HEAD"
+        repo, "[", "]", f"{INITIAL_COMMIT}..HEAD", "--reverse"
     )
     assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
         ("a", "a"),

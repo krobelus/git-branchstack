@@ -23,20 +23,29 @@ SUBJECT_PREFIX_SUFFIX = b"]"
 
 CommitEntries = List[Tuple[str, str, str]]
 
-def parse_log(repo, prefix_prefix, prefix_suffix, base_commit, tip) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
+def parse_log(repo, prefix_prefix, prefix_suffix, *args) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
     commit_entries = []
     dependency_graph: Dict[str, Set[str]] = {}
+    if "--reverse" not in args:
+        dependency_graph = None
+    include_others = "--reverse" not in args
     patches = (
-        repo.git("log", f"{base_commit}..{tip}", "--reverse", "--format=%H %s")
+        repo.git("log", "--format=%H %s", *args)
         .decode()
         .splitlines()
     )
     for line in patches:
         words = line.split(maxsplit=2)
         if len(words) < 3:
+            if include_others:
+                ws = line.split(maxsplit=1)
+                commit_entries += [(ws[0], None, ws[1])]
             continue
         commit, prefix, subject = words
         if not prefix.startswith(prefix_prefix) or not prefix.endswith(prefix_suffix):
+            if include_others:
+                ws = line.split(maxsplit=1)
+                commit_entries += [(ws[0], None, ws[1])]
             continue
 
         prefix = prefix[len(prefix_prefix) : -len(prefix_suffix)]
@@ -45,14 +54,18 @@ def parse_log(repo, prefix_prefix, prefix_suffix, base_commit, tip) -> Tuple[Com
         parent_topics = [t for t in topic_with_parents[1:] if t]
 
         if not topic:
+            if include_others:
+                ws = line.split(maxsplit=1)
+                commit_entries += [(commit, "", subject)]
             continue
 
         commit_entries += [(commit, topic, subject)]
 
-        if topic not in dependency_graph:
-            dependency_graph[topic] = set()
-        if parent_topics:
-            dependency_graph[topic].update(parent_topics)
+        if dependency_graph is not None:
+            if topic not in dependency_graph:
+                dependency_graph[topic] = set()
+            if parent_topics:
+                dependency_graph[topic].update(parent_topics)
 
     return commit_entries, dependency_graph
 
@@ -153,7 +166,7 @@ def create_branches(
         "branchless.subjectPrefixSuffix",
         default=SUBJECT_PREFIX_SUFFIX,
     ).decode()
-    commit_entries, dependency_graph = parse_log(repo, prefix_prefix, prefix_suffix, base_commit, tip)
+    commit_entries, dependency_graph = parse_log(repo, prefix_prefix, prefix_suffix, f"{base_commit}..{tip}", "--reverse")
     def by_first_commit_on_topic(commit_entry):
         (commit, topic, subject) = commit_entry
         for i in range(len(commit_entries)):
