@@ -228,8 +228,11 @@ def create_branch(repo, prefix_prefix, prefix_suffix, trim_subject, base_commit_
             path as well, but is not among our dependencies.
             '''
             print("Missing dependency on one of the commits below?")
-            log = repo.git("log", f"{base_commit_id}..{commit}~", "--format=\t%h %s", "--", path).decode()
-            print(log)
+            log, _ = parse_log(repo, prefix_prefix, prefix_suffix, f"{base_commit_id}..{commit}~", "--", path)
+            for id, topic, subject in log:
+                if topic not in deps:
+                    prefix = "" if topic is None else f"{prefix_prefix}{topic}{prefix_suffix} "
+                    print(f"\t{id[:7]} {prefix}{subject}")
         global ON_CONFLICT
         ON_CONFLICT = on_conflict
         head = rebase(patch, head)
