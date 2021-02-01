@@ -23,7 +23,7 @@ SUBJECT_PREFIX_SUFFIX = b"]"
 
 CommitEntries = List[Tuple[str, str, str]]
 
-def parse_log(repo, base_commit, tip) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
+def parse_log(repo, prefix_prefix, prefix_suffix, base_commit, tip) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
     commit_entries = []
     dependency_graph: Dict[str, Set[str]] = {}
     patches = (
@@ -31,14 +31,6 @@ def parse_log(repo, base_commit, tip) -> Tuple[CommitEntries, Dict[str, Set[str]
         .decode()
         .splitlines()
     )
-    prefix_prefix = repo.config(
-        "branchless.subjectPrefixPrefix",
-        default=SUBJECT_PREFIX_PREFIX,
-    ).decode()
-    prefix_suffix = repo.config(
-        "branchless.subjectPrefixSuffix",
-        default=SUBJECT_PREFIX_SUFFIX,
-    ).decode()
     for line in patches:
         words = line.split(maxsplit=2)
         if len(words) < 3:
@@ -154,7 +146,15 @@ def create_branches(
     force=False,
     trim_subject=False,
 ) -> None:
-    commit_entries, dependency_graph = parse_log(repo, base_commit, tip)
+    prefix_prefix = repo.config(
+        "branchless.subjectPrefixPrefix",
+        default=SUBJECT_PREFIX_PREFIX,
+    ).decode()
+    prefix_suffix = repo.config(
+        "branchless.subjectPrefixSuffix",
+        default=SUBJECT_PREFIX_SUFFIX,
+    ).decode()
+    commit_entries, dependency_graph = parse_log(repo, prefix_prefix, prefix_suffix, base_commit, tip)
     def by_first_commit_on_topic(commit_entry):
         (commit, topic, subject) = commit_entry
         for i in range(len(commit_entries)):
@@ -189,7 +189,7 @@ def create_branches(
     validate_cache(repo, topic_set, force)
     try:
         for topic in topics:
-            create_branch(repo, trim_subject, base_commit_id, commit_entries, topics, dependency_graph, topic)
+            create_branch(repo, prefix_prefix, prefix_suffix, trim_subject, base_commit_id, commit_entries, topics, dependency_graph, topic)
     finally:
         update_cache(repo, topics)
 
@@ -202,7 +202,7 @@ def create_branches(
         ):
             print("\t", line)
 
-def create_branch(repo, trim_subject, base_commit_id, commit_entries, topics, dependency_graph, topic):
+def create_branch(repo, prefix_prefix, prefix_suffix, trim_subject, base_commit_id, commit_entries, topics, dependency_graph, topic):
     head = repo.get_commit(base_commit_id)
     deps = transitive_dependencies(dependency_graph, topic)
     new_messages = []
