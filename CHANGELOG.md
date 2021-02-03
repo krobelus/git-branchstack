@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.0.3] - 2021-02-03
 - BREAKING: the latest version of git-revise is now required, see README
 - On conflict, show commits that are likely missing as dependencies
 - Allow passing a custom range with -r to override @{upstream}..HEAD
