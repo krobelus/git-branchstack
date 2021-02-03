@@ -332,14 +332,14 @@ def override_merge_blobs(
     print(f"Conflict applying '{labels[2]}'")
     print(f"  Path: '{path}'")
 
-    ON_CONFLICT(path)
-
     preimage = merged
     (normalized_preimage, conflict_id, merged_blob) = merge.replay_recorded_resolution(
         repo, tmpdir, preimage
     )
     if merged_blob is not None:
         return merged_blob
+
+    ON_CONFLICT(path)
 
     if input("  Edit conflicted file? (Y/n) ").lower() == "n":
         raise MergeConflict("user aborted")
