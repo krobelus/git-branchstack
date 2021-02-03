@@ -23,17 +23,15 @@ SUBJECT_PREFIX_SUFFIX = b"]"
 
 CommitEntries = List[Tuple[str, str, str]]
 
-def parse_log(repo, prefix_prefix, prefix_suffix, *args) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
+def parse_log(
+    repo, prefix_prefix, prefix_suffix, *args
+) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
     commit_entries = []
     dependency_graph: Dict[str, Set[str]] = {}
     if "--reverse" not in args:
         dependency_graph = None
     include_others = "--reverse" not in args
-    patches = (
-        repo.git("log", "--format=%H %s", *args)
-        .decode()
-        .splitlines()
-    )
+    patches = repo.git("log", "--format=%H %s", *args).decode().splitlines()
     for line in patches:
         words = line.split(maxsplit=2)
         if len(words) < 3:
@@ -166,7 +164,9 @@ def create_branches(
         "branchless.subjectPrefixSuffix",
         default=SUBJECT_PREFIX_SUFFIX,
     ).decode()
-    commit_entries, dependency_graph = parse_log(repo, prefix_prefix, prefix_suffix, f"{base_commit}..{tip}", "--reverse")
+    commit_entries, dependency_graph = parse_log(
+        repo, prefix_prefix, prefix_suffix, f"{base_commit}..{tip}", "--reverse"
+    )
     def by_first_commit_on_topic(commit_entry):
         (commit, topic, subject) = commit_entry
         for i in range(len(commit_entries)):
@@ -201,7 +201,17 @@ def create_branches(
     validate_cache(repo, topic_set, force)
     try:
         for topic in topics:
-            create_branch(repo, prefix_prefix, prefix_suffix, trim_subject, base_commit_id, commit_entries, topics, dependency_graph, topic)
+            create_branch(
+                repo,
+                prefix_prefix,
+                prefix_suffix,
+                trim_subject,
+                base_commit_id,
+                commit_entries,
+                topics,
+                dependency_graph,
+                topic,
+            )
     finally:
         update_cache(repo, topics)
 
@@ -214,7 +224,17 @@ def create_branches(
         ):
             print("\t", line)
 
-def create_branch(repo, prefix_prefix, prefix_suffix, trim_subject, base_commit_id, commit_entries, topics, dependency_graph, topic):
+def create_branch(
+    repo,
+    prefix_prefix,
+    prefix_suffix,
+    trim_subject,
+    base_commit_id,
+    commit_entries,
+    topics,
+    dependency_graph,
+    topic,
+):
     head = repo.get_commit(base_commit_id)
     deps = transitive_dependencies(dependency_graph, topic)
     new_messages = []
@@ -223,15 +243,26 @@ def create_branch(repo, prefix_prefix, prefix_suffix, trim_subject, base_commit_
             continue
         patch = repo.get_commit(commit)
         def on_conflict(path):
-            '''
+            """
             Some commit in "base_commit..commit~" must have touched the
             path as well, but is not among our dependencies.
-            '''
+            """
             print("Missing dependency on one of the commits below?")
-            log, _ = parse_log(repo, prefix_prefix, prefix_suffix, f"{base_commit_id}..{commit}~", "--", path)
+            log, _ = parse_log(
+                repo,
+                prefix_prefix,
+                prefix_suffix,
+                f"{base_commit_id}..{commit}~",
+                "--",
+                path,
+            )
             for id, topic, subject in log:
                 if topic not in deps:
-                    prefix = "" if topic is None else f"{prefix_prefix}{topic}{prefix_suffix} "
+                    prefix = (
+                        ""
+                        if topic is None
+                        else f"{prefix_prefix}{topic}{prefix_suffix} "
+                    )
                     print(f"\t{id[:7]} {prefix}{subject}")
         global ON_CONFLICT
         ON_CONFLICT = on_conflict
