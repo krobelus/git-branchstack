@@ -144,8 +144,8 @@ def update_cache(repo, topics):
         f.write(new_content)
 
 def trimmed_message(subject: str, message: bytes) -> str:
-    body = b"\n".join(message.split(b"\n", maxsplit=1)[1:])
-    return subject.encode() + b"\n" + body
+    body = b"\n".join(message.split(b"\n\n", maxsplit=1)[1:])
+    return subject.encode() + b"\n\n" + body
 
 def create_branches(
     repo,
