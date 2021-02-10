@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- Support multline subjects
 
 ## [0.0.3] - 2021-02-03
 - BREAKING: the latest version of git-revise is now required, see README

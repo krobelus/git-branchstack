@@ -31,18 +31,22 @@ def parse_log(
     if "--reverse" not in args:
         dependency_graph = None
     include_others = "--reverse" not in args
-    patches = repo.git("log", "--format=%H %s", *args).decode().splitlines()
-    for line in patches:
-        words = line.split(maxsplit=2)
-        if len(words) < 3:
-            if include_others:
-                ws = line.split(maxsplit=1)
-                commit_entries += [(ws[0], None, ws[1])]
+    patches = repo.git("log", "-z", "--format=%H %B", *args).decode().split("\x00")
+    for entry in patches:
+        tmp = entry.split(maxsplit=1)
+        if len(tmp) != 2:
             continue
-        commit, prefix, subject = words
+        commit, message = tmp
+        subject = message.split("\n\n", maxsplit=1)[0].strip()
+        words = subject.split(maxsplit=1)
+        if len(words) < 2:
+            if include_others:
+                commit_entries += [(commit, None, subject)]
+            continue
+        prefix, subject = words
         if not prefix.startswith(prefix_prefix) or not prefix.endswith(prefix_suffix):
             if include_others:
-                ws = line.split(maxsplit=1)
+                ws = entry.split(maxsplit=1)
                 commit_entries += [(ws[0], None, ws[1])]
             continue
 
@@ -53,7 +57,7 @@ def parse_log(
 
         if not topic:
             if include_others:
-                ws = line.split(maxsplit=1)
+                ws = entry.split(maxsplit=1)
                 commit_entries += [(commit, "", subject)]
             continue
 
@@ -145,7 +149,9 @@ def update_cache(repo, topics):
 
 def trimmed_message(subject: str, message: bytes) -> str:
     body = b"\n".join(message.split(b"\n\n", maxsplit=1)[1:])
-    return subject.encode() + b"\n\n" + body
+    if body:
+        return subject.encode() + b"\n\n" + body
+    return subject.encode()
 
 def create_branches(
     repo,

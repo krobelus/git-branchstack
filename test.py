@@ -67,7 +67,16 @@ def test_create_branches(repo) -> None:
     gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT, force=True)
     assert graph(repo, "a", "b") == expected
 
-def test_create_branches_ambiguos_ref(repo) -> None:
+def test_create_branches_multiline_subject(repo) -> None:
+    repo.git("commit", "--allow-empty", "-m", "[a] multi\nline\nsubject")
+    repo.git("commit", "--allow-empty", "-m", "[a] more\nlines\n\nmessage\nbody")
+
+    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+    assert repo.git("log", "--reverse", "--format=%B", "-2", f"a").decode() == (
+        "multi\nline\nsubject" + "\n" + "more\nlines\n\nmessage\nbody" + "\n"
+    )
+
+def test_create_branches_ambiguous_ref(repo) -> None:
     repo.git("update-ref", "clash", "HEAD")
     repo.git("commit", "--allow-empty", "-m", "[clash] commit on branch")
 
