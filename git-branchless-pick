@@ -2,28 +2,29 @@
 
 usage() {
 	echo "\
-usage: git ${0##*/git-} <commit> [<rebase-args>...]
+usage: git ${0##*/git-} <base_commit>..<commit> [<rebase-args>...]
 
 Start a new interactive rebase, with these steps planned:
-- drop commits whose subject start with \"[<commit>] \"
-- cherry-pick commits <commit>.. and prefix their subjects with \"[<commit>] \"
+- drop commits whose subjects start with \"[<commit>] \"
+- cherry-pick the range of commits and prefix their subjects with \"[<commit>] \"
 
 Arguments beyond the first are passed on to git-rebase(1)." && exit 1
 }
 
 test "$1" || usage
-ref_with_remote="$1"
+range=$1
 shift
-topic="${ref_with_remote#*/}"
+topic="${range#*..}" # Drop left part of range.
+topic="${topci#*/}" # Drop remote.
 
 prefix=$(git config branchless.subjectPrefixPrefix || echo [)
 suffix=$(git config branchless.subjectPrefixSuffix || echo ])
 
 cherries=$(
-	git log --reverse --format="pick %h $prefix${topic}$suffix %s" .."$ref_with_remote"
+	git log --reverse --format="pick %h $prefix${topic}$suffix %s" "$range"
 )
 if ! [ "$cherries" ]; then
-	echo "Nothing to cherry-pick from ..$ref_with_remote"
+	echo "Nothing to cherry-pick from $range"
 	exit 0
 fi
 

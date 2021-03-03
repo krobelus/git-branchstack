@@ -94,20 +94,21 @@ other commit ranges into your branch:
 
 ```sh
 $ ln -s $PWD/git-branchless-pick ~/bin/
-$ git branchless-pick some-branch 
+$ git branchless-pick ..some-branch 
 ```
 
-This starts an interactive rebase, prompting you to cherry-pick all missing
-commits from that branch, prefixing their commit subjects with `[some-branch]`.
-Old commits with such a subject are dropped, so this allows you to quickly
-update to the latest upstream version of a ref that has been force-pushed.
+This starts an interactive rebase, prompting you to cherry-pick all
+missing commits from `some-branch`, prefixing their commit subjects with
+`[some-branch]`.  Old commits with such a subject are dropped, so this
+allows you to quickly update to the latest upstream version of a ref that
+has been force-pushed.
 
 Here's how you would use this to cherry-pick GitHub pull requests:
 
 ```sh
 $ git config --add remote.origin.fetch '+refs/pull/*/head:refs/remotes/origin/pr-*'
 $ git fetch origin
-$ git branchless-pick origin/pr-123
+$ git branchless-pick $(git merge-base origin/pr-123 HEAD)..origin/pr-123
 ```
 
 ## Tips
