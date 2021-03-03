@@ -43,7 +43,8 @@ Create some commits with commit messages starting with `[<topic>] ` where
 `<topic>` is a valid branch name.  Then run `git branchless` to create a branch
 for each of those topics among commits in the range `@{upstream}..HEAD`.
 Each topic branch is the result of applying the topic's commits on top of
-`@{upstream}`.
+the common ancester of your branch and the upstream branch -
+`git merge-base @{upstream} HEAD`.
 
 For example, if you have a history like
 

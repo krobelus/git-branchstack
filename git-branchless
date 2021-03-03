@@ -439,6 +439,7 @@ def main(argv: Optional[List[str]] = None):
             else:
                 branch = None
                 base_commit, tip = parse_range(repo, args.range)
+            base_commit = repo.git("merge-base", "--", base_commit, "HEAD").decode()
             create_branches(
                 repo,
                 branch,

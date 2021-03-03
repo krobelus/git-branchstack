@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- Branches are no longer based on @{upstream} but on `git merge-base @{u} HEAD`
 - Support multline subjects
 
 ## [0.0.3] - 2021-02-03
