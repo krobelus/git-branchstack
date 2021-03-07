@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.0.4] - 2021-03-07
 - BREAKING: `git-branchless-pick` takes a `..`-range instead of a single commit.
 - Branches are no longer based on @{upstream} but on `git merge-base @{u} HEAD`
 - Similarly, `git-branchless-pick` will only not add new commits from @{upstream}
