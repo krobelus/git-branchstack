@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- `git-branchless-pick` no longer pulls in new commits from `@{upstream}`.
 
 ## [0.0.4] - 2021-03-07
 - BREAKING: `git-branchless-pick` takes a `..`-range instead of a single commit.

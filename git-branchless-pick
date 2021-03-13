@@ -14,7 +14,8 @@ Arguments beyond the first are passed on to git-rebase(1)." && exit 1
 test "$1" || usage
 range=$1
 shift
-topic="${range#*..}" # Drop left part of range.
+base_commit="${range%%..*}" # Left part of the range.
+topic="${range#*..}" # Right part of range.
 topic="${topci#*/}" # Drop remote.
 
 prefix=$(git config branchless.subjectPrefixPrefix || echo [)
@@ -51,4 +52,4 @@ GIT_SEQUENCE_EDITOR='
 			$todo = "";
 		}
 		END { exec "$editor .git/rebase-merge/git-rebase-todo"; }
-	'\''' git rebase -i --no-autosquash "$@"
+	'\''' git rebase -i --no-autosquash "$(git merge-base "$base_commit" HEAD)" "$@"
