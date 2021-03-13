@@ -35,7 +35,7 @@ for cherry in $cherries
 do
 	printf '%s\nexec %s\n' \
 		"$cherry" \
-		"GIT_EDITOR='perl -pi -e \"s{^}{$prefix${topic}$suffix } if $. == 1\"' git commit --amend"
+		"GIT_EDITOR='perl -pi -e \"s{^}{$prefix${topic}$suffix } if $. == 1\"' git commit --amend --allow-empty"
 done
 )
 todo=$todo \
