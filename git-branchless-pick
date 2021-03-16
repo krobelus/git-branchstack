@@ -16,7 +16,7 @@ range=$1
 shift
 base_commit="${range%%..*}" # Left part of the range.
 topic="${range#*..}" # Right part of range.
-topic="${topci#*/}" # Drop remote.
+topic="${topic#*/}" # Drop remote.
 
 prefix=$(git config branchless.subjectPrefixPrefix || echo [)
 suffix=$(git config branchless.subjectPrefixSuffix || echo ])
