@@ -43,7 +43,7 @@ Create some commits with commit messages starting with `[<topic>] ` where
 `<topic>` is a valid branch name.  Then run `git branchless` to create a branch
 for each of those topics among commits in the range `@{upstream}..HEAD`.
 Each topic branch is the result of applying the topic's commits on top of
-the common ancester of your branch and the upstream branch -
+the common ancestor of your branch and the upstream branch, that is,
 `git merge-base @{upstream} HEAD`.
 
 For example, if you have a history like
@@ -78,10 +78,10 @@ and `parent2`. The order here does not matter because it will be determined
 by which topic occurs first in the commit log.
 
 If there is a merge conflict when trying to apply a commit, you will be
-shown potentially missing dependencies. Add the missing dependencies or
-resolve the conflict. The conflict resolution will be remembered if you
-enable `git rerere` support in `git revise` (set `rerere.enabled` and
-`rerere.autoUpdate` to true).
+shown potentially missing dependencies. You can either add the missing
+dependencies, or resolve the conflict. The conflict resolution will
+be remembered if you enable `git rerere` support in `git revise`
+(use `git config rerere.enabled true; git config rerere.autoUpdate true`).
 
 Instead of the default topic tag delimiters (`[` and `]`), you can
 set Git configuration values `branchless.subjectPrefixPrefix` and
