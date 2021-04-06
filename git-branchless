@@ -57,7 +57,6 @@ def parse_log(
 
         if not topic:
             if include_others:
-                ws = entry.split(maxsplit=1)
                 commit_entries += [(commit, "", subject)]
             continue
 
