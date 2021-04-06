@@ -46,8 +46,7 @@ def parse_log(
         prefix, subject = words
         if not prefix.startswith(prefix_prefix) or not prefix.endswith(prefix_suffix):
             if include_others:
-                ws = entry.split(maxsplit=1)
-                commit_entries += [(ws[0], None, ws[1])]
+                commit_entries += [(commit, None, subject)]
             continue
 
         prefix = prefix[len(prefix_prefix) : -len(prefix_suffix)]

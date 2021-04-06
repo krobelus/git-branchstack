@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 - `git-branchless-pick` no longer pulls in new commits from `@{upstream}`.
+- Fix subject computation for conflict hint commits without topic prefix
 
 ## [0.0.4] - 2021-03-07
 - BREAKING: `git-branchless-pick` takes a `..`-range instead of a single commit.
