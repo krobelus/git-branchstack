@@ -48,17 +48,18 @@ the common ancestor of your branch and the upstream branch, that is,
 
 For example, if you have a history like
 
-    $ git log :/'Initial commit'.. --format=%s
-    [my-awesome-feature] Initial support for feature
-    [my-awesome-feature] Some more work on feature
-    [some-unrelated-fix] Unrelated fix
-    Local commit without topic tag
+    $ git log --graph --oneline
+    * 2708e12 [my-awesome-feature] Initial support for feature
+    * c6dd3ab [my-awesome-feature] Some more work on feature
+    * 683de4b [some-unrelated-fix] Unrelated fix
+    * 3eee379 Local commit without topic tag
+    * 2ec4d51 Initial commit
 
 Then this command will create or update two branches that branch away
 from HEAD:
 
     $ git branchless
-    $ git log --all --graph --oneline
+    $ git log --graph --oneline --all
     * 2708e12 (HEAD) [my-awesome-feature] Initial support for feature
     * c6dd3ab [my-awesome-feature] Some more work on feature
     * 683de4b [some-unrelated-fix] Unrelated fix
