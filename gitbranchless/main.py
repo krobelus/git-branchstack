@@ -23,11 +23,15 @@ SUBJECT_PREFIX_SUFFIX = b"]"
 
 CommitEntries = List[Tuple[str, str, str]]
 
+TrimSubject = bool
+Dependency = Tuple[str, TrimSubject]
+Dependencies = Dict[str, Dependency]
+
 def parse_log(
     repo, prefix_prefix, prefix_suffix, *args
-) -> Tuple[CommitEntries, Dict[str, Set[str]]]:
+) -> Tuple[CommitEntries, Dependencies]:
     commit_entries = []
-    dependency_graph: Dict[str, Set[str]] = {}
+    dependency_graph: Dependencies = {}
     if "--reverse" not in args:
         dependency_graph = None
     include_others = "--reverse" not in args
@@ -52,7 +56,7 @@ def parse_log(
         prefix = prefix[len(prefix_prefix) : -len(prefix_suffix)]
         topic_with_parents = prefix.split(":")
         topic = topic_with_parents[0]
-        parent_topics = [t for t in topic_with_parents[1:] if t]
+        parent_topics = [parse_parent_topic(t) for t in topic_with_parents[1:] if t]
 
         if not topic:
             if include_others:
@@ -63,25 +67,34 @@ def parse_log(
 
         if dependency_graph is not None:
             if topic not in dependency_graph:
-                dependency_graph[topic] = set()
+                dependency_graph[topic] = {}
             if parent_topics:
                 dependency_graph[topic].update(parent_topics)
 
     return commit_entries, dependency_graph
 
-def transitive_dependencies(depgraph: Dict[str, Set[str]], node: str) -> Set[str]:
-    visited: Set[str] = set()
+def parse_parent_topic(topic: str) -> Dependency:
+    trim_subject = False
+    if topic.startswith("+"):
+        topic = topic[len("+") :]
+        trim_subject = True
+    return (topic, trim_subject)
+
+def transitive_dependencies(depgraph: Dependencies, node: Dependency) -> Dependencies:
+    visited: Dependencies = {}
     transitive_dependencies_rec(depgraph, node, visited)
     return visited
 
 def transitive_dependencies_rec(
-    depgraph: Dict[str, Set[str]], node: str, visited: Set[str]
+    depgraph: Dependencies, node: Dependency, visited: Dependencies
 ) -> None:
-    if node in visited:
+    name, trim_subject = node
+    if name in visited:
         return
-    visited.add(node)
-    for x in depgraph.get(node, ()):
-        transitive_dependencies_rec(depgraph, x, visited)
+    visited[name] = trim_subject
+    if name in depgraph:
+        for x in depgraph[name].items():
+            transitive_dependencies_rec(depgraph, x, visited)
 
 class BranchWasModifiedError(Exception):
     pass
@@ -158,7 +171,7 @@ def create_branches(
     tip="HEAD",
     branches=None,
     force=False,
-    trim_subject=False,
+    trim_all_subjects=False,
 ) -> None:
     prefix_prefix = repo.config(
         "branchless.subjectPrefixPrefix",
@@ -209,7 +222,7 @@ def create_branches(
                 repo,
                 prefix_prefix,
                 prefix_suffix,
-                trim_subject,
+                trim_all_subjects,
                 base_commit_id,
                 commit_entries,
                 topics,
@@ -232,7 +245,7 @@ def create_branch(
     repo,
     prefix_prefix,
     prefix_suffix,
-    trim_subject,
+    trim_all_subjects,
     base_commit_id,
     commit_entries,
     topics,
@@ -240,11 +253,12 @@ def create_branch(
     topic,
 ):
     head = repo.get_commit(base_commit_id)
-    deps = transitive_dependencies(dependency_graph, topic)
+    deps = transitive_dependencies(dependency_graph, (topic, False))
     new_messages = []
     for commit, t, subject in commit_entries:
         if t not in deps:
             continue
+        trim_subject = deps[t]
         patch = repo.get_commit(commit)
         def on_conflict(path):
             """
@@ -271,7 +285,7 @@ def create_branch(
         global ON_CONFLICT
         ON_CONFLICT = on_conflict
         head = rebase(patch, head)
-        if trim_subject or t == topic:
+        if t == topic or trim_all_subjects or trim_subject:
             head = head.update(message=trimmed_message(subject, patch.message))
         new_messages += [head.message]
     topic_fqn = f"refs/heads/{topic}"
@@ -445,7 +459,7 @@ def main(argv: Optional[List[str]] = None):
                 tip,
                 getattr(args, "<topic>"),
                 force=args.force,
-                trim_subject=args.trim_subject,
+                trim_all_subjects=args.trim_subject,
             )
     except BranchWasModifiedError as err:
         print(

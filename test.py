@@ -148,7 +148,19 @@ def test_create_branches_remove_tags(repo) -> None:
         == "subject a\n" + "[b] subject b"
     )
 
-    gitbranchless.create_branches(repo, None, INITIAL_COMMIT, "HEAD", trim_subject=True)
+    gitbranchless.create_branches(
+        repo, None, INITIAL_COMMIT, "HEAD", trim_all_subjects=True
+    )
+    assert (
+        repo.git("log", "--format=%s", f"{INITIAL_COMMIT}..a").decode()
+        == "subject a\n" + "subject b"
+    )
+
+def test_create_branches_remove_tags_from_prefixed_parents(repo) -> None:
+    repo.git("commit", "--allow-empty", "-m", "[b] subject b")
+    repo.git("commit", "--allow-empty", "-m", "[a:+b] subject a")
+
+    gitbranchless.create_branches(repo, None, INITIAL_COMMIT, "HEAD")
     assert (
         repo.git("log", "--format=%s", f"{INITIAL_COMMIT}..a").decode()
         == "subject a\n" + "subject b"
@@ -205,9 +217,9 @@ def test_parse_log_custom_topic_affixes(repo) -> None:
         ("c", "c1"),
     )
     assert dependency_graph == {
-        "a": set(),
-        "b": set(),
-        "c": {"a"},
+        "a": {},
+        "b": {},
+        "c": {"a": False},
     }
 
 def test_parse_log_forward_dependency(repo) -> None:
@@ -221,17 +233,21 @@ def test_parse_log_forward_dependency(repo) -> None:
         ("b", "b"),
     )
     assert dependency_graph == {
-        "a": {"b"},
-        "b": set(),
+        "a": {"b": False},
+        "b": {},
     }
 
 def test_transitive_dependencies() -> None:
     dep_graph = {
-        "a": {"c"},
-        "b": {"a"},
-        "c": {"b"},
+        "a": {"c": False},
+        "b": {"a": False},
+        "c": {"b": False},
     }
-    assert gitbranchless.transitive_dependencies(dep_graph, "a") == {"a", "b", "c"}
+    assert gitbranchless.transitive_dependencies(dep_graph, ("a", False)) == {
+        "a": False,
+        "b": False,
+        "c": False,
+    }
 
 # Taken from git-revise
 @pytest.fixture(autouse=True)

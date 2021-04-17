@@ -78,6 +78,11 @@ For example use `[child:parent1:parent2]` to base `child` off both `parent1`
 and `parent2`. The order here does not matter because it will be determined
 by which topic occurs first in the commit log.
 
+By default, when dependencies are added to generated branches, the commit
+message will include their topic tags. You can turn this off for all branches
+with the `--trim-subject` option, or for a single dependency by adding the
+`+` character before a dependency specification (like `[child:+parent]`).
+
 If there is a merge conflict when trying to apply a commit, you will be
 shown potentially missing dependencies. You can either add the missing
 dependencies, or resolve the conflict. The conflict resolution will
