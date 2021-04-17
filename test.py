@@ -5,9 +5,7 @@ from gitrevise.odb import Repository
 from pathlib import Path
 import pytest
 import textwrap
-import importlib
-
-gitbranchless = importlib.import_module("git-branchless")
+import gitbranchless.main as gitbranchless
 
 def test_create_branches(repo) -> None:
     a = repo.workdir / "a"
