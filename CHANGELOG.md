@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [0.0.5] - 2021-04-24
 - First release on PyPI.
 - Specify dependencies with a `+` prefix, like `[child:+parent]`, to include
   commits from `parent` and trim their subject tags.
