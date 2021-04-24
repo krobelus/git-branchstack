@@ -4,10 +4,9 @@
 
 ## Motivation
 
-Sometimes I am working on multiple unrelated changes to a [Git]
-repository. Instead of checking out a separate branch for each change,
-I prefer to do most of my work on a single branch. This [blog post] lists
-some advantages.
+Sometimes, I am working on multiple changes to a [Git] repository.  I want
+to add all of my changes to a single branch, but send them upstream
+in small, reviewable chunks.
 
 Git already supports this workflow via [git format-patch] and [git send-email],
 however, many projects prefer to receive patches as pull requests.  To make
@@ -85,15 +84,15 @@ with the `--trim-subject` option, or for a single dependency by adding the
 
 If there is a merge conflict when trying to apply a commit, you will be
 shown potentially missing dependencies. You can either add the missing
-dependencies, or resolve the conflict. The conflict resolution will
-be remembered if you enable `git rerere` support in `git revise`
-(use `git config rerere.enabled true; git config rerere.autoUpdate true`).
+dependencies, or resolve the conflict. You can tell Git to remember your
+conflict resolution by enabling `git rerere` (use `git config rerere.enabled
+true; git config rerere.autoUpdate true`).
 
 Instead of the default topic tag delimiters (`[` and `]`), you can
 set Git configuration values `branchless.subjectPrefixPrefix` and
 `branchless.subjectPrefixSuffix`, respectively.
 
-## Integrating commits from other branches
+## Integrating Commits from Other Branches
 
 You can use [git-branchless-pick](./git-branchless-pick) to integrate
 other commit ranges into your branch:
@@ -129,14 +128,33 @@ $ git revise --interactive --edit
 
 Like `git revise`, you can use `git branchless` during an interactive rebase.
 
+## Related Articles
+
+- In [Stacked Diffs Versus Pull Requests], Jackson Gabbard
+  describes the advantages of a patch-based workflow (using [Phabricator])
+  over the pull-request model; `git-branchless` can be used to implement
+  that workflow, even when you have to use pull-requests.
+
+- In [My unorthodox, branchless git workflow], Drew
+  DeVault explains some advantages of a branchless workflow.
+
+## Related Projects
+
+- [Stacked Git](https://stacked-git.github.io/) implements a similar
+  workflow. It provides a comprehensive set of commands to manage commit
+  metadata, whereas `git branchless` only offers one command and requires
+  the user to use standard Git tools for everything else.
+
 ## Contributing
 
-You're welcome give feedback on the public mailing list by sending email
-to <mailto:~krobelus/git-branchless@lists.sr.ht>.  To see prior postings,
-visit the [list archive](https://lists.sr.ht/~krobelus/git-branchless).
+Submit feedback at <https://github.com/krobelus/git-branchless/> or at the
+[public mailing list](https://lists.sr.ht/~krobelus/git-branchless) by
+sending email to <mailto:~krobelus/git-branchless@lists.sr.ht>.
 
 [Git]: <https://git-scm.com/>
 [git revise]: <https://github.com/mystor/git-revise/>
 [git format-patch]: <https://git-scm.com/docs/git-format-patch>
 [git send-email]: <https://git-send-email.io/>
-[blog post]: <https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html>
+[Stacked Diffs Versus Pull Requests]: <https://jg.gg/2018/09/29/stacked-diffs-versus-pull-requests/>
+[My unorthodox, branchless git workflow]: <https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html>
+[Phabricator]: <https://www.phacility.com/>
