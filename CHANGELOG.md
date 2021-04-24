@@ -1,8 +1,9 @@
 # Changelog
 
-## [Unreleased]
-- Specify dependencies like `[child:+parent]`, to include commits from
-  `parent` and trim their subject tags.
+## Unreleased
+- First release on PyPI.
+- Specify dependencies with a `+` prefix, like `[child:+parent]`, to include
+  commits from `parent` and trim their subject tags.
 - `git-branchless-pick` no longer pulls in new commits from `@{upstream}`.
 - Fix subject computation for conflict hint commits without topic prefix
 

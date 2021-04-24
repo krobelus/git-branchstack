@@ -1,5 +1,7 @@
 # git branchless
 
+[![PyPi](https://img.shields.io/pypi/v/git-branchless.svg)](https://pypi.org/project/git-branchless)
+
 *Efficiently manage topic branches without leaving your local branch*
 
 ## Motivation
@@ -22,19 +24,9 @@ update the generated branches: just re-run `git branchless`.
 
 ## Installation
 
-1. Make sure you have Python 3.6 or higher.
-2. Install [git revise]. Currently the latest development version is required:
-
-   ```sh
-   $ pip install git+https://github.com/mystor/git-revise.git@543863fa994afe8304b4afa34e4c37abf35a52ff
-   ```
-
-3. Add `git branchless` to your `$PATH`:
-
-   ```sh
-   $ git clone https://git.sr.ht/~krobelus/git-branchless && cd git-branchless
-   $ ln -s $PWD/git-branchless ~/bin/
-   ```
+```sh
+$ pip install --user git-branchless
+```
 
 ## Usage
 
