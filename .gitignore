@@ -1,1 +1,3 @@
-/git_branchless.egg-info
+/git_branchless.egg-info/
+/build/
+/dist/
