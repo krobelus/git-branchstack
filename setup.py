@@ -23,6 +23,7 @@ setup(
     long_description_content_type="text/markdown",
     license="MIT",
     keywords="git branch-workflow pull-request patch-stack",
+    url="https://git.sr.ht/~krobelus/git-branchless/",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
