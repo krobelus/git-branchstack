@@ -2,13 +2,12 @@
 
 [![PyPi](https://img.shields.io/pypi/v/git-branchless.svg)](https://pypi.org/project/git-branchless)
 
-*Efficiently manage topic branches without leaving your local branch*
-
 ## Motivation
 
 Sometimes, I am working on multiple changes to a [Git] repository.  I want
-to add all of my changes to a single branch, but send them upstream
-in small, reviewable chunks.
+to add all of my changes to a single branch, but send them upstream in
+small, reviewable chunks. Refer to [the related articles](#related-articles)
+for some advantages of this workflow.
 
 Git already supports this workflow via [git format-patch] and [git send-email],
 however, many projects prefer to receive patches as pull requests.  To make
@@ -32,26 +31,22 @@ $ pip install --user git-branchless
 
 Create some commits with commit messages starting with `[<topic>] ` where
 `<topic>` is a valid branch name.  Then run `git branchless` to create a branch
-for each of those topics among commits in the range `@{upstream}..HEAD`.
-Each topic branch is the result of applying the topic's commits on top of
-the common ancestor of your branch and the upstream branch, that is,
-`git merge-base @{upstream} HEAD`.
+`<topic>` with the given commits.
 
-For example, if you have a history like
+For example, if you have created a commit history like
 
     $ git log --graph --oneline
-    * 2708e12 [my-awesome-feature] Initial support for feature
+    * 2708e12 (HEAD -> master) [my-awesome-feature] Initial support for feature
     * c6dd3ab [my-awesome-feature] Some more work on feature
     * 683de4b [some-unrelated-fix] Unrelated fix
     * 3eee379 Local commit without topic tag
-    * 2ec4d51 Initial commit
+    * 2ec4d51 (origin/master) Initial commit
 
-Then this command will create or update two branches that branch away
-from HEAD:
+Then this command will (re)create two branches:
 
     $ git branchless
     $ git log --graph --oneline --all
-    * 2708e12 (HEAD) [my-awesome-feature] Initial support for feature
+    * 2708e12 (HEAD -> master) [my-awesome-feature] Initial support for feature
     * c6dd3ab [my-awesome-feature] Some more work on feature
     * 683de4b [some-unrelated-fix] Unrelated fix
     * 3eee379 Local commit without topic tag
@@ -60,9 +55,14 @@ from HEAD:
     |/
     | * d5f4bb2 (some-unrelated-fix) Unrelated fix
     |/
-    * 2ec4d51 Initial commit
+    * 2ec4d51 (origin/master) Initial commit
 
-`git branchless` ignores commits whose subject does not start with a topic tag.
+By default, `git branchless` looks only at commits in the range
+`@{upstream}..HEAD`.  It ignores commits whose subject does not start with
+a topic tag.
+
+Created branches based on the common ancestor of your branch and the upstream
+branch, that is, `git merge-base @{upstream} HEAD`.
 
 To avoid conflicts, you can specify dependencies between branches.
 For example use `[child:parent1:parent2]` to base `child` off both `parent1`
@@ -74,11 +74,11 @@ message will include their topic tags. You can turn this off for all branches
 with the `--trim-subject` option, or for a single dependency by adding the
 `+` character before a dependency specification (like `[child:+parent]`).
 
-If there is a merge conflict when trying to apply a commit, you will be
-shown potentially missing dependencies. You can either add the missing
-dependencies, or resolve the conflict. You can tell Git to remember your
-conflict resolution by enabling `git rerere` (use `git config rerere.enabled
-true; git config rerere.autoUpdate true`).
+If there is a merge conflict when applying a commit, you will be shown
+potentially missing dependencies. You can either add the missing dependencies,
+or resolve the conflict. You can tell Git to remember your conflict resolution
+by enabling `git rerere` (use `git config rerere.enabled true; git config
+rerere.autoUpdate true`).
 
 Instead of the default topic tag delimiters (`[` and `]`), you can
 set Git configuration values `branchless.subjectPrefixPrefix` and
@@ -109,27 +109,30 @@ $ git branchless-pick $(git merge-base origin/pr-123 HEAD)..origin/pr-123
 
 ## Tips
 
-You can use [git revise] to efficiently modify your commit messages to contain
-the `[<topic>]` tags. This command lets you edit all commit messages in
-`@{upstream}..HEAD`.
+- You can use [git revise] to efficiently modify your commit messages
+  to contain the `[<topic>]` tags. This command lets you edit all commit
+  messages in `@{upstream}..HEAD`.
 
-```sh
-$ git revise --interactive --edit
-```
+  ```sh
+  $ git revise --interactive --edit
+  ```
 
-Like `git revise`, you can use `git branchless` during an interactive rebase.
+  Like `git revise`, you can use `git branchless` during an interactive rebase.
+
+- [`git-autofixup`](https://github.com/torbiak/git-autofixup/) can eliminate
+  some of the busywork involved in creating fixup commits.
 
 ## Related Articles
 
 - In [Stacked Diffs Versus Pull Requests], Jackson Gabbard
   describes the advantages of a patch-based workflow (using [Phabricator])
-  over the pull-request model; `git-branchless` can be used to implement
-  that workflow, even when you have to use pull-requests.
+  over the one-branch-per-reviewable-change model; `git-branchless` can be used
+  to implement the first workflow, even when you have to use pull-requests.
 
 - In [My unorthodox, branchless git workflow], Drew
   DeVault explains some advantages of a branchless workflow.
 
-## Related Projects
+## Peer Projects
 
 - [Stacked Git](https://stacked-git.github.io/) implements a similar
   workflow. It provides a comprehensive set of commands to manage commit
