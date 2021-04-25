@@ -90,7 +90,6 @@ You can use [git-branchless-pick](./git-branchless-pick) to integrate
 other commit ranges into your branch:
 
 ```sh
-$ ln -s $PWD/git-branchless-pick ~/bin/
 $ git branchless-pick ..some-branch 
 ```
 
