@@ -24,6 +24,7 @@ update the generated branches: just re-run `git branchless`.
 ## Installation
 
 ```sh
+$ pip install --user git-revise@git+https://github.com/mystor/git-revise.git@e27bc1631f5da6041c2fa7e3d1f5a9fecfb3ef57
 $ pip install --user git-branchless
 ```
 
