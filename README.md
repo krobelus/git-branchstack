@@ -23,6 +23,8 @@ update the generated branches: just re-run `git branchless`.
 
 ## Installation
 
+`git branchless` currently depends on an unreleased version of [git revise].
+
 ```sh
 $ pip install --user git-revise@git+https://github.com/mystor/git-revise.git@e27bc1631f5da6041c2fa7e3d1f5a9fecfb3ef57
 $ pip install --user git-branchless
@@ -127,7 +129,7 @@ $ git branchless-pick $(git merge-base origin/pr-123 HEAD)..origin/pr-123
 
 - In [Stacked Diffs Versus Pull Requests], Jackson Gabbard
   describes the advantages of a patch-based workflow (using [Phabricator])
-  over the one-branch-per-reviewable-change model; `git-branchless` can be used
+  over the one-branch-per-reviewable-change model; `git branchless` can be used
   to implement the first workflow, even when you have to use pull-requests.
 
 - In [My unorthodox, branchless git workflow], Drew
