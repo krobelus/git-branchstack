@@ -5,7 +5,7 @@
 ## Motivation
 
 Sometimes, I am working on multiple changes to a [Git] repository.  I want
-to add all of my changes to a single branch, but send them upstream in
+to combine all of my changes in a single branch, but send them upstream in
 small, reviewable chunks. Refer to [the related articles](#related-articles)
 for some advantages of this workflow.
 
@@ -14,12 +14,12 @@ however, many projects prefer to receive patches as pull requests.  To make
 proposed changes easy to review, you'll want to submit a separate pull
 request for each independent change.  With a branchless workflow, the sole
 local branch typically contains multiple independent changes. To submit
-those upstream as pull requests, you need to create a separate branch for
-each change.  Running `git branchless` creates the desired branches without
-requiring you to switch back and forth between branches. This allows you
-to submit small pull requests while enjoying the benefits of a branchless
-workflow. After making any changes to your worktree's branch you can easily
-update the generated branches: just re-run `git branchless`.
+those as pull requests, you need to create a separate branch for each change.
+Running `git branchless` creates the desired branches without requiring you
+to switch back and forth between branches. This allows you to submit small
+pull requests while enjoying the benefits of a branchless workflow. After
+making any changes to your worktree's branch you can easily update the
+generated branches: just re-run `git branchless`.
 
 ## Installation
 
@@ -137,10 +137,17 @@ $ git branchless-pick $(git merge-base origin/pr-123 HEAD)..origin/pr-123
 
 ## Peer Projects
 
-- [Stacked Git](https://stacked-git.github.io/) implements a similar
-  workflow. It provides a comprehensive set of commands to manage commit
-  metadata, whereas `git branchless` only offers one command and requires
-  the user to use standard Git tools for everything else.
+While `git branchless` only offers one command and relies on standard Git
+tools for everything else, there are some tools that offer a more comprehensive
+set of commands to achieve a similar workflow:
+
+- [Stacked Git](https://stacked-git.github.io/)
+- [git ps](https://github.com/uptech/git-ps)
+- [gh-stack](https://github.com/timothyandrew/gh-stack)
+
+Unlike its peers, `git branchless` never modifies any worktree files,
+since it uses `git revise` internally.  This makes it faster, and avoids
+invalidating builds.
 
 ## Contributing
 
