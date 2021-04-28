@@ -479,8 +479,8 @@ def main(argv: Optional[List[str]] = None):
         print(f"merge conflict: {err}")
         sys.exit(1)
     except TopicNotFoundError as err:
-        topic, base_commit = err.args
-        print(f"error: topic '{topic}' not found {base_commit}..")
+        topic, base_commit, tip = err.args
+        print(f"error: topic '{topic}' not found {base_commit}..{tip}")
     except ValueError as err:
         print(f"invalid value: {err}")
         sys.exit(1)
