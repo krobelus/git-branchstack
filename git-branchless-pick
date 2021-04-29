@@ -20,6 +20,12 @@ if [ -z "$1" ] || [ "$1" = "-h" ]; then
 fi
 range=$1
 shift
+
+if ! printf %s "$range" | grep -qF ..; then
+	echo "$NAME: argument must be a valid 'a..b' range: '$range'"
+	exit 1
+fi
+
 base_commit="${range%%..*}" # Left part of the range.
 topic="${range#*..}" # Right part of range.
 topic="${topic#*/}" # Drop remote.
