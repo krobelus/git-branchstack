@@ -1,17 +1,23 @@
 #!/bin/sh
 
+NAME="git ${0##*/git-}"
 usage() {
 	echo "\
-usage: git ${0##*/git-} <base_commit>..<commit> [<rebase-args>...]
+usage: $NAME <base_commit>..<commit> [<rebase-args>...]
 
 Start a new interactive rebase, with these steps planned:
-- drop commits whose subjects start with \"[<commit>] \"
-- cherry-pick the range of commits and prefix their subjects with \"[<commit>] \"
+- drop commits whose subjects start with \"[<topic>] \"
+- cherry-pick the range of commits and prefix their subjects with \"[<topic>] \"
+
+where <topic> is the basename of <commit>.
+For example, <commit> can look like <remote>/<topic>.
 
 Arguments beyond the first are passed on to git-rebase(1)." && exit 1
 }
 
-test "$1" || usage
+if [ -z "$1" ] || [ "$1" = "-h" ]; then
+	usage
+fi
 range=$1
 shift
 base_commit="${range%%..*}" # Left part of the range.
@@ -25,7 +31,7 @@ cherries=$(
 	git log --reverse --format="pick %h $prefix${topic}$suffix %s" "$range"
 )
 if ! [ "$cherries" ]; then
-	echo "Nothing to cherry-pick from $range"
+	echo "$NAME: nothing to cherry-pick from $range"
 	exit 0
 fi
 
