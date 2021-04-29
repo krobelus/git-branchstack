@@ -4,12 +4,13 @@ NAME="git ${0##*/git-}"
 usage() {
 	echo "\
 usage: $NAME <base_commit>..<commit> [<rebase-args>...]
+       $NAME ..<commit> [<rebase-args>...]
 
 Start a new interactive rebase, with these steps planned:
 - drop commits whose subjects start with \"[<topic>] \"
-- cherry-pick the range of commits and prefix their subjects with \"[<topic>] \"
+- cherry-pick the given commit range and prefixes subjects with \"[<topic>] \"
 
-where <topic> is the basename of <commit>.
+where <topic> is <commit> but with one leading path component removed.
 For example, <commit> can look like <remote>/<topic>.
 
 Arguments beyond the first are passed on to git-rebase(1)." && exit 1
@@ -26,9 +27,10 @@ if ! printf %s "$range" | grep -qF ..; then
 	exit 1
 fi
 
-base_commit="${range%%..*}" # Left part of the range.
-topic="${range#*..}" # Right part of range.
-topic="${topic#*/}" # Drop remote.
+remote_branch=${range#*..} # Right part of range.
+topic=${remote_branch#*/} # Drop remote.
+base_commit=${range%%..*} # Left part of range.
+base_commit=${base_commit:-$remote_branch} # This is good enough if the remote is not stale.
 
 prefix=$(git config branchless.subjectPrefixPrefix || echo [)
 suffix=$(git config branchless.subjectPrefixSuffix || echo ])

@@ -3,6 +3,8 @@
 ## Unreleased
 - `git-branchless-pick` now prefers `$GIT_SEQUENCE_EDITOR` over `git var $EDITOR`
   for editing the rebase-todo list.
+- `git-branchless-pick` now supports empty base commits, so `..some-branch`
+  means: pick all commits on `some-branch` minus the commits already in `HEAD`.
 
 ## [0.0.5] - 2021-04-24
 - First release on PyPI.
