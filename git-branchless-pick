@@ -39,7 +39,7 @@ do
 done
 )
 todo=$todo \
-editor=$(git var GIT_EDITOR) \
+editor=${GIT_SEQUENCE_EDITOR:-$(git var GIT_EDITOR)} \
 topic=$topic prefix=$prefix suffix=$suffix \
 GIT_SEQUENCE_EDITOR='
 	perl -pi -e '\''

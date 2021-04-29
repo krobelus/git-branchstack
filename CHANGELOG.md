@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- `git-branchless-pick` now prefers `$GIT_SEQUENCE_EDITOR` over `git var $EDITOR`
+  for editing the rebase-todo list.
 
 ## [0.0.5] - 2021-04-24
 - First release on PyPI.
