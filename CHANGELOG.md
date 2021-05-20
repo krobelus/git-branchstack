@@ -5,6 +5,8 @@
   for editing the rebase-todo list.
 - `git-branchless-pick` now supports empty base commits, so `..some-branch`
   means: pick all commits on `some-branch` minus the commits already in `HEAD`.
+- `git-branchless-pick ..some/branch` will no longer trim the `some/` prefix,
+  unless `some` is a valid Git remote.
 
 ## [0.0.5] - 2021-04-24
 - First release on PyPI.

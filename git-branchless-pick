@@ -28,7 +28,10 @@ if ! printf %s "$range" | grep -qF ..; then
 fi
 
 remote_branch=${range#*..} # Right part of range.
-topic=${remote_branch#*/} # Drop remote.
+topic=${remote_branch}
+if git remote | grep -qxF -- "${remote_branch%%/*}"; then
+	topic=${remote_branch#*/} # Drop remote.
+fi
 base_commit=${range%%..*} # Left part of range.
 base_commit=${base_commit:-$remote_branch} # This is good enough if the remote is not stale.
 
