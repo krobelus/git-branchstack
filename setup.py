@@ -42,7 +42,8 @@ setup(
         "Source Code": "https://git.sr.ht/~krobelus/git-branchless/",
         "Documentation": "https://git.sr.ht/~krobelus/git-branchless/",
     },
-    install_requires=[
-        "git-revise @ git+https://github.com/mystor/git-revise.git@e27bc1631f5da6041c2fa7e3d1f5a9fecfb3ef57",
-    ],
+    # TODO PyPI does not allow unrelease dependencies.
+    # install_requires=[
+    #     "git-revise @ git+https://github.com/mystor/git-revise.git@e27bc1631f5da6041c2fa7e3d1f5a9fecfb3ef57",
+    # ],
 )

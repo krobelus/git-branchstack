@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## [0.0.6] - 2021-06-03
 - `git-branchless-pick` now prefers `$GIT_SEQUENCE_EDITOR` over `git var $EDITOR`
   for editing the rebase-todo list.
 - `git-branchless-pick` now supports empty base commits, so `..some-branch`
