@@ -29,7 +29,9 @@ fi
 
 remote_branch=${range#*..} # Right part of range.
 topic=${remote_branch}
-if git remote | grep -qxF -- "${remote_branch%%/*}"; then
+if [ "${remote_branch#refs/}" != "${remote_branch}" ]; then
+	topic=gitref/${remote_branch#refs/} # Drop "refs/" to avoid ambiguous ref.
+elif git remote | grep -qxF -- "${remote_branch%%/*}"; then
 	topic=${remote_branch#*/} # Drop remote.
 fi
 base_commit=${range%%..*} # Left part of range.

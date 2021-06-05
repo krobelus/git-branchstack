@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- `git-branchless-pick` replaces a "refs/" prefix with "gitref/", making it
+  easier to cherry-pick remote non-branch refs without introducing ambiguous
+  refs.
 
 ## [0.0.6] - 2021-06-03
 - `git-branchless-pick` now prefers `$GIT_SEQUENCE_EDITOR` over `git var $EDITOR`
