@@ -41,16 +41,16 @@ def parse_log(
         if len(tmp) != 2:
             continue
         commit, message = tmp
-        subject = message.split("\n\n", maxsplit=1)[0].strip()
-        words = subject.split(maxsplit=1)
+        raw_subject = message.split("\n\n", maxsplit=1)[0].strip()
+        words = raw_subject.split(maxsplit=1)
         if len(words) < 2:
             if include_others:
-                commit_entries += [(commit, None, subject)]
+                commit_entries += [(commit, None, raw_subject)]
             continue
         prefix, subject = words
         if not prefix.startswith(prefix_prefix) or not prefix.endswith(prefix_suffix):
             if include_others:
-                commit_entries += [(commit, None, subject)]
+                commit_entries += [(commit, None, raw_subject)]
             continue
 
         prefix = prefix[len(prefix_prefix) : -len(prefix_suffix)]

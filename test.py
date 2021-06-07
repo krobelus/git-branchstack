@@ -237,6 +237,20 @@ def test_parse_log_forward_dependency(repo) -> None:
         "b": {},
     }
 
+def test_parse_log_include_others(repo) -> None:
+    repo.git("commit", "--allow-empty", "-m", "a b c")
+    repo.git("commit", "--allow-empty", "-m", "[t] d e f")
+    commit_entries, dependency_graph = gitbranchless.parse_log(
+        repo,
+        "[",
+        "]",
+        f"{INITIAL_COMMIT}..HEAD",
+    )
+    assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
+        ("t", "d e f"),
+        (None, "a b c"),
+    )
+
 def test_transitive_dependencies() -> None:
     dep_graph = {
         "a": {"c": False},
@@ -288,6 +302,7 @@ def hermetic_seal(tmp_path_factory, monkeypatch):
     assert Popen(("git", "commit", "--allow-empty", "-m", "本")).wait() == 0
 
 INITIAL_COMMIT = ":/本"
+
 @pytest.fixture
 def repo(hermetic_seal):
     with Repository() as repo:
