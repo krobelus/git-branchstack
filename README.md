@@ -151,7 +151,7 @@ invalidating builds.
 
 ## Contributing
 
-Submit feedback at <https://github.com/krobelus/git-branchless/> or at the
+Submit feedback at <https://github.com/krobelus/git-branchless/> or to the
 [public mailing list](https://lists.sr.ht/~krobelus/git-branchless) by
 sending email to <mailto:~krobelus/git-branchless@lists.sr.ht>.
 
