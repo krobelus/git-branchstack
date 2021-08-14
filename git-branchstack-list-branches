@@ -1,8 +1,8 @@
 #!/bin/sh
 # Prints all branches that are cooking.
 
-prefix=$(git config branchless.subjectPrefixPrefix || echo [)
-suffix=$(git config branchless.subjectPrefixSuffix || echo ])
+prefix=$(git config branchstack.subjectPrefixPrefix || echo [)
+suffix=$(git config branchstack.subjectPrefixSuffix || echo ])
 
 upstream=@{upstream}
 git log "${@:-$upstream..}" --format=%s |

@@ -106,7 +106,7 @@ class TopicNotFoundError(Exception):
     pass
 
 def validate_cache(repo, topic_set, force):
-    cache_path = repo.gitdir / "branchless-cache"
+    cache_path = repo.gitdir / "branchstack-cache"
     if not os.path.exists(cache_path):
         return
     cached_shas = [
@@ -139,7 +139,7 @@ def validate_cache(repo, topic_set, force):
             raise BranchWasModifiedError(topic)
 
 def update_cache(repo, topics):
-    cache_path = repo.gitdir / "branchless-cache"
+    cache_path = repo.gitdir / "branchstack-cache"
     mode = "r+" if cache_path.exists() else "w+"
     with open(cache_path, mode) as f:
         cached_shas = {
@@ -174,11 +174,11 @@ def create_branches(
     trim_all_subjects=False,
 ) -> None:
     prefix_prefix = repo.config(
-        "branchless.subjectPrefixPrefix",
+        "branchstack.subjectPrefixPrefix",
         default=SUBJECT_PREFIX_PREFIX,
     ).decode()
     prefix_suffix = repo.config(
-        "branchless.subjectPrefixSuffix",
+        "branchstack.subjectPrefixSuffix",
         default=SUBJECT_PREFIX_SUFFIX,
     ).decode()
     commit_entries, dependency_graph = parse_log(
@@ -308,7 +308,7 @@ def create_branch(
     if head.tree() != topic_ref.target.tree() or new_messages != old_messages:
         topic_oid = topic_ref.target.oid
         print(f"Updating {topic_ref.name} ({topic_oid} => {head.oid})")
-        topic_ref.update(head, "git-branchless rewrite")
+        topic_ref.update(head, "git-branchstack rewrite")
 
     topics[topic] = topic_ref.target.oid
 
@@ -400,7 +400,7 @@ def dwim(repo: Repository) -> Tuple[str, str]:
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="git branchless",
+        prog="git branchstack",
         description=USAGE,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

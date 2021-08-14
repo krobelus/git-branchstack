@@ -37,8 +37,8 @@ fi
 base_commit=${range%%..*} # Left part of range.
 base_commit=${base_commit:-$remote_branch} # This is good enough if the remote is not stale.
 
-prefix=$(git config branchless.subjectPrefixPrefix || echo [)
-suffix=$(git config branchless.subjectPrefixSuffix || echo ])
+prefix=$(git config branchstack.subjectPrefixPrefix || echo [)
+suffix=$(git config branchstack.subjectPrefixSuffix || echo ])
 
 cherries=$(
 	git log --reverse --format="pick %h $prefix${topic}$suffix %s" "$range"

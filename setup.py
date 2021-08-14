@@ -1,21 +1,21 @@
 from pathlib import Path
 from setuptools import setup
 
-import gitbranchless
+import gitbranchstack
 
 HERE = Path(__file__).resolve().parent
 
 setup(
-    name="git-branchless",
-    version=gitbranchless.__version__,
-    packages=["gitbranchless"],
+    name="git-branchstack",
+    version=gitbranchstack.__version__,
+    packages=["gitbranchstack"],
     python_requires=">=3.6",
     entry_points={
         "console_scripts": [
-            "git-branchless = gitbranchless.main:main",
+            "git-branchstack = gitbranchstack.main:main",
         ],
     },
-    scripts=["git-branchless-pick"],
+    scripts=["git-branchstack-pick"],
     author="Johannes Altmanninger",
     author_email="aclopte@gmail.com",
     description="Efficiently manage Git branches without leaving your local branch",
@@ -23,7 +23,7 @@ setup(
     long_description_content_type="text/markdown",
     license="MIT",
     keywords="git branch-workflow pull-request patch-stack",
-    url="https://git.sr.ht/~krobelus/git-branchless/",
+    url="https://github.com/krobelus/git-branchstack/",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -38,9 +38,9 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
     project_urls={
-        "Bug Tracker": "https://github.com/krobelus/git-branchless/issues/",
-        "Source Code": "https://git.sr.ht/~krobelus/git-branchless/",
-        "Documentation": "https://git.sr.ht/~krobelus/git-branchless/",
+        "Bug Tracker": "https://github.com/krobelus/git-branchstack/issues/",
+        "Source Code": "https://github.com/krobelus/git-branchstack/",
+        "Documentation": "https://git.sr.ht/~krobelus/git-branchstack/",
     },
     # TODO PyPI does not allow unrelease dependencies.
     # install_requires=[

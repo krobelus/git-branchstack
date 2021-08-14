@@ -1,6 +1,6 @@
-# git branchless
+# git branchstack
 
-[![PyPi](https://img.shields.io/pypi/v/git-branchless.svg)](https://pypi.org/project/git-branchless)
+[![PyPi](https://img.shields.io/pypi/v/git-branchstack.svg)](https://pypi.org/project/git-branchstack)
 
 ## Motivation
 
@@ -15,25 +15,25 @@ proposed changes easy to review, you'll want to submit a separate pull
 request for each independent change.  With a branchless workflow, the sole
 local branch typically contains multiple independent changes. To submit
 those as pull requests, you need to create a separate branch for each change.
-Running `git branchless` creates the desired branches without requiring you
+Running `git branchstack` creates the desired branches without requiring you
 to switch back and forth between branches. This allows you to submit small
 pull requests while enjoying the benefits of a branchless workflow. After
 making any changes to your worktree's branch you can easily update the
-generated branches: just re-run `git branchless`.
+generated branches: just re-run `git branchstack`.
 
 ## Installation
 
-`git branchless` currently depends on an unreleased version of [git revise].
+`git branchstack` currently depends on an unreleased version of [git revise].
 
 ```sh
 $ pip install --user git-revise@git+https://github.com/mystor/git-revise.git@e27bc1631f5da6041c2fa7e3d1f5a9fecfb3ef57
-$ pip install --user git-branchless
+$ pip install --user git-branchstack
 ```
 
 ## Usage
 
 Create some commits with commit messages starting with `[<topic>] ` where
-`<topic>` is a valid branch name.  Then run `git branchless` to create a branch
+`<topic>` is a valid branch name.  Then run `git branchstack` to create a branch
 `<topic>` with the given commits.
 
 For example, if you have created a commit history like
@@ -47,7 +47,7 @@ For example, if you have created a commit history like
 
 Then this command will (re)create two branches:
 
-    $ git branchless
+    $ git branchstack
     $ git log --graph --oneline --all
     * 2708e12 (HEAD -> master) [my-awesome-feature] Initial support for feature
     * c6dd3ab [my-awesome-feature] Some more work on feature
@@ -60,7 +60,7 @@ Then this command will (re)create two branches:
     |/
     * 2ec4d51 (origin/master) Initial commit
 
-By default, `git branchless` looks only at commits in the range
+By default, `git branchstack` looks only at commits in the range
 `@{upstream}..HEAD`.  It ignores commits whose subject does not start with
 a topic tag.
 
@@ -84,16 +84,16 @@ by enabling `git rerere` (use `git config rerere.enabled true; git config
 rerere.autoUpdate true`).
 
 Instead of the default topic tag delimiters (`[` and `]`), you can
-set Git configuration values `branchless.subjectPrefixPrefix` and
-`branchless.subjectPrefixSuffix`, respectively.
+set Git configuration values `branchstack.subjectPrefixPrefix` and
+`branchstack.subjectPrefixSuffix`, respectively.
 
 ## Integrating Commits from Other Branches
 
-You can use [git-branchless-pick](./git-branchless-pick) to integrate
+You can use [git-branchstack-pick](./git-branchstack-pick) to integrate
 other commit ranges into your branch:
 
 ```sh
-$ git branchless-pick ..some-branch 
+$ git branchstack-pick ..some-branch 
 ```
 
 This starts an interactive rebase, prompting you to cherry-pick all
@@ -107,7 +107,7 @@ Here's how you would use this to cherry-pick GitHub pull requests:
 ```sh
 $ git config --add remote.origin.fetch '+refs/pull/*/head:refs/remotes/origin/pr-*'
 $ git fetch origin
-$ git branchless-pick $(git merge-base origin/pr-123 HEAD)..origin/pr-123
+$ git branchstack-pick $(git merge-base origin/pr-123 HEAD)..origin/pr-123
 ```
 
 ## Tips
@@ -120,7 +120,7 @@ $ git branchless-pick $(git merge-base origin/pr-123 HEAD)..origin/pr-123
   $ git revise --interactive --edit
   ```
 
-  Like `git revise`, you can use `git branchless` during an interactive rebase.
+  Like `git revise`, you can use `git branchstack` during an interactive rebase.
 
 - [`git-autofixup`](https://github.com/torbiak/git-autofixup/) can eliminate
   some of the busywork involved in creating fixup commits.
@@ -129,15 +129,15 @@ $ git branchless-pick $(git merge-base origin/pr-123 HEAD)..origin/pr-123
 
 - In [Stacked Diffs Versus Pull Requests], Jackson Gabbard
   describes the advantages of a patch-based workflow (using [Phabricator])
-  over the one-branch-per-reviewable-change model; `git branchless` can be used
+  over the one-branch-per-reviewable-change model; `git branchstack` can be used
   to implement the first workflow, even when you have to use pull-requests.
 
-- In [My unorthodox, branchless git workflow], Drew
-  DeVault explains some advantages of a branchless workflow.
+- In [My unorthodox, branchstack git workflow], Drew
+  DeVault explains some advantages of a branchstack workflow.
 
 ## Peer Projects
 
-While `git branchless` only offers one command and relies on standard Git
+While `git branchstack` only offers one command and relies on standard Git
 tools for everything else, there are some tools that offer a more comprehensive
 set of commands to achieve a similar workflow:
 
@@ -145,15 +145,15 @@ set of commands to achieve a similar workflow:
 - [git ps](https://github.com/uptech/git-ps)
 - [gh-stack](https://github.com/timothyandrew/gh-stack)
 
-Unlike its peers, `git branchless` never modifies any worktree files,
+Unlike its peers, `git branchstack` never modifies any worktree files,
 since it uses `git revise` internally.  This makes it faster, and avoids
 invalidating builds.
 
 ## Contributing
 
-Submit feedback at <https://github.com/krobelus/git-branchless/> or to the
-[public mailing list](https://lists.sr.ht/~krobelus/git-branchless) by
-sending email to <mailto:~krobelus/git-branchless@lists.sr.ht>.
+Submit feedback at <https://github.com/krobelus/git-branchstack/> or to the
+[public mailing list](https://lists.sr.ht/~krobelus/git-branchstack) by
+sending email to <mailto:~krobelus/git-branchstack@lists.sr.ht>.
 
 [Git]: <https://git-scm.com/>
 [git revise]: <https://github.com/mystor/git-revise/>

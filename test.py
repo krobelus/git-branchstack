@@ -5,7 +5,7 @@ from gitrevise.odb import Repository
 from pathlib import Path
 import pytest
 import textwrap
-import gitbranchless.main as gitbranchless
+import gitbranchstack.main as gitbranchstack
 
 def test_create_branches(repo) -> None:
     a = repo.workdir / "a"
@@ -27,7 +27,7 @@ def test_create_branches(repo) -> None:
 
     assert expected == graph(repo)
 
-    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+    gitbranchstack.create_branches(repo, "🐬", INITIAL_COMMIT)
 
     expected = """\
 *  (HEAD -> 🐬) another WIP commit
@@ -47,29 +47,29 @@ def test_create_branches(repo) -> None:
     assert graph(repo, "a", "b") == expected
 
     # A repeated invocation does not change anything.
-    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+    gitbranchstack.create_branches(repo, "🐬", INITIAL_COMMIT)
     assert graph(repo, "a", "b") == expected
 
     # Modifying a generated branch will make us fail.
     repo.git("update-ref", "refs/heads/a", "HEAD")
     assert graph(repo, "a", "b") != expected
     try:
-        gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+        gitbranchstack.create_branches(repo, "🐬", INITIAL_COMMIT)
         assert (
             False
         ), "Expect error about refusing to create branch when it was modified since the last run"
-    except gitbranchless.BranchWasModifiedError:
+    except gitbranchstack.BranchWasModifiedError:
         pass
 
     # Unless we are asked to overwrite them.
-    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT, force=True)
+    gitbranchstack.create_branches(repo, "🐬", INITIAL_COMMIT, force=True)
     assert graph(repo, "a", "b") == expected
 
 def test_create_branches_multiline_subject(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[a] multi\nline\nsubject")
     repo.git("commit", "--allow-empty", "-m", "[a] more\nlines\n\nmessage\nbody")
 
-    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+    gitbranchstack.create_branches(repo, "🐬", INITIAL_COMMIT)
     assert repo.git("log", "--reverse", "--format=%B", "-2", f"a").decode() == (
         "multi\nline\nsubject" + "\n" + "more\nlines\n\nmessage\nbody" + "\n"
     )
@@ -78,7 +78,7 @@ def test_create_branches_ambiguous_ref(repo) -> None:
     repo.git("update-ref", "clash", "HEAD")
     repo.git("commit", "--allow-empty", "-m", "[clash] commit on branch")
 
-    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+    gitbranchstack.create_branches(repo, "🐬", INITIAL_COMMIT)
 
     expected = """\
 *  (HEAD -> 🐬) [clash] commit on branch
@@ -91,7 +91,7 @@ def test_create_branches_ambiguous_ref(repo) -> None:
 def test_create_branches_stale_cache(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[lost-branch] subject")
 
-    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+    gitbranchstack.create_branches(repo, "🐬", INITIAL_COMMIT)
 
     expected = """\
 *  (HEAD -> 🐬) [lost-branch] subject
@@ -103,19 +103,19 @@ def test_create_branches_stale_cache(repo) -> None:
 
     (repo.gitdir / "refs/heads/lost-branch").unlink()
 
-    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT)
+    gitbranchstack.create_branches(repo, "🐬", INITIAL_COMMIT)
     assert graph(repo, "lost-branch") == expected
 
 def test_create_branches_carry_over_cache(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[a] subject a")
     repo.git("commit", "--allow-empty", "-m", "[b] subject b")
 
-    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT, branches=("b",))
-    gitbranchless.create_branches(repo, "🐬", INITIAL_COMMIT, branches=("a",))
+    gitbranchstack.create_branches(repo, "🐬", INITIAL_COMMIT, branches=("b",))
+    gitbranchstack.create_branches(repo, "🐬", INITIAL_COMMIT, branches=("a",))
 
     assert tuple(
         line.split()[0]
-        for line in (repo.gitdir / "branchless-cache").read_bytes().splitlines()
+        for line in (repo.gitdir / "branchstack-cache").read_bytes().splitlines()
     ) == (
         b"b",
         b"a",
@@ -123,18 +123,18 @@ def test_create_branches_carry_over_cache(repo) -> None:
 
 def test_create_branches_invalid_topic(repo) -> None:
     try:
-        gitbranchless.create_branches(
+        gitbranchstack.create_branches(
             repo, "🐬", INITIAL_COMMIT, branches=("invalid-topic",)
         )
         assert False, "Expect error about missing topic"
-    except gitbranchless.TopicNotFoundError as e:
+    except gitbranchstack.TopicNotFoundError as e:
         assert e.args == ("invalid-topic", INITIAL_COMMIT, "HEAD")
 
 def test_create_branches_custom_range(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[a] subject a")
     repo.git("commit", "--allow-empty", "-m", "[b] subject b")
 
-    gitbranchless.create_branches(repo, "🐬", "HEAD~2", "HEAD~")
+    gitbranchstack.create_branches(repo, "🐬", "HEAD~2", "HEAD~")
     assert repo.git("branch", "--list", "a")
     assert not repo.git("branch", "--list", "b")
 
@@ -142,13 +142,13 @@ def test_create_branches_remove_tags(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[b] subject b")
     repo.git("commit", "--allow-empty", "-m", "[a:b] subject a")
 
-    gitbranchless.create_branches(repo, None, INITIAL_COMMIT, "HEAD")
+    gitbranchstack.create_branches(repo, None, INITIAL_COMMIT, "HEAD")
     assert (
         repo.git("log", "--format=%s", f"{INITIAL_COMMIT}..a").decode()
         == "subject a\n" + "[b] subject b"
     )
 
-    gitbranchless.create_branches(
+    gitbranchstack.create_branches(
         repo, None, INITIAL_COMMIT, "HEAD", trim_all_subjects=True
     )
     assert (
@@ -160,7 +160,7 @@ def test_create_branches_remove_tags_from_prefixed_parents(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[b] subject b")
     repo.git("commit", "--allow-empty", "-m", "[a:+b] subject a")
 
-    gitbranchless.create_branches(repo, None, INITIAL_COMMIT, "HEAD")
+    gitbranchstack.create_branches(repo, None, INITIAL_COMMIT, "HEAD")
     assert (
         repo.git("log", "--format=%s", f"{INITIAL_COMMIT}..a").decode()
         == "subject a\n" + "subject b"
@@ -175,7 +175,7 @@ def test_dwim(repo) -> None:
     repo.git("config", "branch.🐬.remote", "origin")
     repo.git("config", "branch.🐬.merge", "refs/heads/🐳")
 
-    branch, base_commit = gitbranchless.dwim(repo)
+    branch, base_commit = gitbranchstack.dwim(repo)
     assert branch == "🐬"
     assert base_commit == "@{upstream}"
     root_id = repo.git("rev-parse", INITIAL_COMMIT).decode()
@@ -190,15 +190,15 @@ def test_dwim(repo) -> None:
     commit("3")
 
     assert Popen(("git", "rebase", "🐬")).wait() != 0
-    branch, base_commit = gitbranchless.dwim(repo)
+    branch, base_commit = gitbranchstack.dwim(repo)
     assert branch == "test-branch"
     assert base_commit == repo.git("rev-parse", "🐬").decode()
 
 def test_parse_log_custom_topic_affixes(repo) -> None:
     prefix = ""
     suffix = ":"
-    repo.git("config", "branchless.subjectPrefixPrefix", prefix.encode())
-    repo.git("config", "branchless.subjectPrefixSuffix", suffix.encode())
+    repo.git("config", "branchstack.subjectPrefixPrefix", prefix.encode())
+    repo.git("config", "branchstack.subjectPrefixSuffix", suffix.encode())
 
     repo.git("commit", "--allow-empty", "-m", "a: a1")
     repo.git("commit", "--allow-empty", "-m", "b: b1")
@@ -206,7 +206,7 @@ def test_parse_log_custom_topic_affixes(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "a: a2")
     repo.git("commit", "--allow-empty", "-m", "c:a: c1")
 
-    commit_entries, dependency_graph = gitbranchless.parse_log(
+    commit_entries, dependency_graph = gitbranchstack.parse_log(
         repo, prefix, suffix, f"{INITIAL_COMMIT}..HEAD", "--reverse"
     )
     assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
@@ -225,7 +225,7 @@ def test_parse_log_custom_topic_affixes(repo) -> None:
 def test_parse_log_forward_dependency(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[a:b] a")
     repo.git("commit", "--allow-empty", "-m", "[b] b")
-    commit_entries, dependency_graph = gitbranchless.parse_log(
+    commit_entries, dependency_graph = gitbranchstack.parse_log(
         repo, "[", "]", f"{INITIAL_COMMIT}..HEAD", "--reverse"
     )
     assert tuple((topic, message) for commit_id, topic, message in commit_entries) == (
@@ -240,7 +240,7 @@ def test_parse_log_forward_dependency(repo) -> None:
 def test_parse_log_include_others(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "a b c")
     repo.git("commit", "--allow-empty", "-m", "[t] d e f")
-    commit_entries, dependency_graph = gitbranchless.parse_log(
+    commit_entries, dependency_graph = gitbranchstack.parse_log(
         repo,
         "[",
         "]",
@@ -257,7 +257,7 @@ def test_transitive_dependencies() -> None:
         "b": {"a": False},
         "c": {"b": False},
     }
-    assert gitbranchless.transitive_dependencies(dep_graph, ("a", False)) == {
+    assert gitbranchstack.transitive_dependencies(dep_graph, ("a", False)) == {
         "a": False,
         "b": False,
         "c": False,
