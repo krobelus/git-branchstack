@@ -12,12 +12,12 @@ for some advantages of this workflow.
 Git already supports this workflow via [git format-patch] and [git send-email],
 however, many projects prefer to receive patches as pull requests.  To make
 proposed changes easy to review, you'll want to submit a separate pull
-request for each independent change.  With a branchless workflow, the sole
+request for each independent change.  With a branchstack workflow, the sole
 local branch typically contains multiple independent changes. To submit
 those as pull requests, you need to create a separate branch for each change.
 Running `git branchstack` creates the desired branches without requiring you
 to switch back and forth between branches. This allows you to submit small
-pull requests while enjoying the benefits of a branchless workflow. After
+pull requests while enjoying the benefits of a branchstack workflow. After
 making any changes to your worktree's branch you can easily update the
 generated branches: just re-run `git branchstack`.
 
@@ -64,8 +64,8 @@ By default, `git branchstack` looks only at commits in the range
 `@{upstream}..HEAD`.  It ignores commits whose subject does not start with
 a topic tag.
 
-Created branches based on the common ancestor of your branch and the upstream
-branch, that is, `git merge-base @{upstream} HEAD`.
+Created branches are based on the common ancestor of your branch and the
+upstream branch, that is, `git merge-base @{upstream} HEAD`.
 
 To avoid conflicts, you can specify dependencies between branches.
 For example use `[child:parent1:parent2]` to base `child` off both `parent1`
