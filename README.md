@@ -132,8 +132,8 @@ $ git branchstack-pick $(git merge-base origin/pr-123 HEAD)..origin/pr-123
   over the one-branch-per-reviewable-change model; `git branchstack` can be used
   to implement the first workflow, even when you have to use pull-requests.
 
-- In [My unorthodox, branchstack git workflow], Drew
-  DeVault explains some advantages of a branchstack workflow.
+- In [My unorthodox, branchless git workflow], Drew
+  DeVault explains some advantages of a similar workflow.
 
 ## Peer Projects
 
