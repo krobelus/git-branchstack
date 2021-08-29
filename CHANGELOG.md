@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## [0.1.0] - 2021-08-29
 - BREAKING `git-branchless` was renamed to `git-branchstack` (#1).
 - `git-branchstack-pick` replaces a "refs/" prefix with "gitref/", making it
   easier to cherry-pick remote non-branch refs without introducing ambiguous
