@@ -39,26 +39,26 @@ Create some commits with commit messages starting with `[<topic>] ` where
 For example, if you have created a commit history like
 
     $ git log --graph --oneline
-    * 2708e12 (HEAD -> master) [my-awesome-feature] Initial support for feature
-    * c6dd3ab [my-awesome-feature] Some more work on feature
-    * 683de4b [some-unrelated-fix] Unrelated fix
-    * 3eee379 Local commit without topic tag
-    * 2ec4d51 (origin/master) Initial commit
+    * 9629a6c (HEAD -> local-branch) [some-unrelated-fix] Unrelated fix
+    * e764f47 [my-awesome-feature] Some more work on feature
+    * a9a811f [my-awesome-feature] Initial support for feature
+    * 28fcf9c Local commit without topic tag
+    * 5fb0776 (master) Initial commit
 
 Then this command will (re)create two branches:
 
     $ git branchstack
     $ git log --graph --oneline --all
-    * 2708e12 (HEAD -> master) [my-awesome-feature] Initial support for feature
-    * c6dd3ab [my-awesome-feature] Some more work on feature
-    * 683de4b [some-unrelated-fix] Unrelated fix
-    * 3eee379 Local commit without topic tag
-    | * 7645890 (my-awesome-feature) Initial support for feature
-    | * e420fd6 Some more work on feature
+    * 9629a6c (HEAD -> local-branch) [some-unrelated-fix] Unrelated fix
+    * e764f47 [my-awesome-feature] Some more work on feature
+    * a9a811f [my-awesome-feature] Initial support for feature
+    * 28fcf9c Local commit without topic tag
+    | * 7d4d166 (my-awesome-feature) Some more work on feature
+    | * fb0941f Initial support for feature
     |/
-    | * d5f4bb2 (some-unrelated-fix) Unrelated fix
+    | * 1a37fd0 (some-unrelated-fix) Unrelated fix
     |/
-    * 2ec4d51 (origin/master) Initial commit
+    * 5fb0776 (master) Initial commit
 
 By default, `git branchstack` looks only at commits in the range
 `@{upstream}..HEAD`.  It ignores commits whose subject does not start with
