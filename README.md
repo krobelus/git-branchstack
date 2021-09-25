@@ -152,8 +152,8 @@ invalidating builds.
 ## Contributing
 
 Submit feedback at <https://github.com/krobelus/git-branchstack/> or to the
-[public mailing list](https://lists.sr.ht/~krobelus/git-branchstack) by
-sending email to <mailto:~krobelus/git-branchstack@lists.sr.ht>.
+[public mailing list](https://lists.sr.ht/~krobelus/git-branchless) by
+sending email to <mailto:~krobelus/git-branchless@lists.sr.ht>.
 
 [Git]: <https://git-scm.com/>
 [git revise]: <https://github.com/mystor/git-revise/>
