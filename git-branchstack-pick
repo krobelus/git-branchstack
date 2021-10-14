@@ -40,8 +40,17 @@ base_commit=${base_commit:-$remote_branch} # This is good enough if the remote i
 prefix=$(git config branchstack.subjectPrefixPrefix || echo [)
 suffix=$(git config branchstack.subjectPrefixSuffix || echo ])
 
+pick=pick
+drop=drop
+exec=exec
+if [ "$(git config rebase.abbreviateCommands)" = true ]; then
+	pick=p
+	drop=d
+	exec=x
+fi
+
 cherries=$(
-	git log --reverse --format="pick %h $prefix${topic}$suffix %s" "$range"
+	git log --reverse --format="$pick %h $prefix${topic}$suffix %s" "$range"
 )
 if ! [ "$cherries" ]; then
 	echo "$NAME: nothing to cherry-pick from $range"
@@ -52,7 +61,7 @@ todo=$(IFS='
 '
 for cherry in $cherries
 do
-	printf '%s\nexec %s\n' \
+	printf "%s\n$exec %s\n" \
 		"$cherry" \
 		"GIT_EDITOR='perl -pi -e \"s{^}{$prefix${topic}$suffix } if $. == 1\"' git commit --amend --allow-empty"
 done
@@ -60,11 +69,12 @@ done
 todo=$todo \
 editor=${GIT_SEQUENCE_EDITOR:-$(git var GIT_EDITOR)} \
 topic=$topic prefix=$prefix suffix=$suffix \
+pick=$pick drop=$drop \
 GIT_SEQUENCE_EDITOR='
 	perl -pi -e '\''
 		use Env;
-		if (m/^pick \S+ \Q$prefix$topic\E(?::[^ ]+?)?\Q$suffix /) {
-			s/^pick/drop/;
+		if (m/^$pick \S+ \Q$prefix$topic\E(?::[^ ]+?)?\Q$suffix /) {
+			s/^$pick/$drop/;
 			$dropped_any = 1;
 		} elsif ($todo and ($dropped_any or m/^$/)) {
 			$_ = $todo . "\n" . $_;
