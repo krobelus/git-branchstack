@@ -69,8 +69,8 @@ upstream branch, that is, `git merge-base @{upstream} HEAD`.
 
 To avoid conflicts, you can specify dependencies between branches.
 For example use `[child:parent1:parent2]` to base `child` off both `parent1`
-and `parent2`. The order here does not matter because it will be determined
-by which topic occurs first in the commit log.
+and `parent2`. The order of parents does not matter: the one that occurs
+first in the commit log will be added first.
 
 By default, when dependencies are added to generated branches, the commit
 message will include their topic tags. You can turn this off for all branches
@@ -96,18 +96,18 @@ other commit ranges into your branch:
 $ git branchstack-pick ..some-branch 
 ```
 
-This starts an interactive rebase, prompting you to cherry-pick all
-missing commits from `some-branch`, prefixing their commit subjects with
-`[some-branch]`.  Old commits with such a subject are dropped, so this
-allows you to quickly update to the latest upstream version of a ref that
-has been force-pushed.
+This behaves like `git rebase -i` except it prefills the rebase-todo list to
+cherry-pick all missing commits from `some-branch`, prefixing their commit
+subjects with `[some-branch]`.  Old commits with such a subject are dropped,
+so this allows you to quickly update to the latest upstream version of a
+ref that has been force-pushed.
 
 Here's how you would use this to cherry-pick GitHub pull requests:
 
 ```sh
 $ git config --add remote.origin.fetch '+refs/pull/*/head:refs/remotes/origin/pr-*'
 $ git fetch origin
-$ git branchstack-pick $(git merge-base origin/pr-123 HEAD)..origin/pr-123
+$ git branchstack-pick ..origin/pr-123
 ```
 
 ## Tips
