@@ -32,9 +32,10 @@ $ pip install --user git-branchstack
 
 ## Usage
 
-Create some commits with commit messages starting with `[<topic>] ` where
-`<topic>` is a valid branch name.  Then run `git branchstack` to create a branch
-`<topic>` with the given commits.
+Create some commits with commit messages starting with a topic tag `[...]`.
+The topic name, `<topic>`, inside the square bracket tag markers `[<topic>]`,
+must be an unused valid branch name.  Then run `git branchstack` to create
+the branch `<topic>` with the given commits.
 
 For example, if you have created a commit history like
 
