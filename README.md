@@ -4,31 +4,34 @@
 
 ## Motivation
 
-Sometimes, I am working on multiple changes to a [Git] repository.  I want
-to combine all of my changes in a single branch, but send them upstream in
-small, reviewable chunks. Refer to [the related articles](#related-articles)
-for some advantages of this workflow.
+When I am working on multiple changes to a [Git] repository, I usually want to
+combine all of my changes in a single branch, but send them upstream in small,
+reviewable chunks. As stated in [the related articles](#related-articles)
+one advantage is that you can base new work on previous changes, and test
+them in combination.
 
 Git already supports this workflow via [git format-patch] and [git send-email],
-however, many projects prefer to receive patches as pull requests.  To make
-proposed changes easy to review, you'll want to submit a separate pull
-request for each independent change.  With a branchstack workflow, the sole
-local branch typically contains multiple independent changes. To submit
-those as pull requests, you need to create a separate branch for each change.
-Running `git branchstack` creates the desired branches without requiring you
-to switch back and forth between branches. This allows you to submit small
-pull requests while enjoying the benefits of a branchstack workflow. After
-making any changes to your worktree's branch you can easily update the
-generated branches: just re-run `git branchstack`.
+however, many projects prefer to receive patches via pull requests.  To make
+proposed changes easy to review, you'll want to submit a separate pull request
+for each independent change on your worktree's branch.  This means that you
+want to create branches containing those independent changes and nothing else.
+
+`git branchstack` creates the desired branches without requiring you to switch
+back and forth between branches (and invalidating builds). This allows you
+to submit small pull requests, while enjoying the benefits of a branchless
+workflow. After making any changes to your worktree's branch you can easily
+update the generated branches: just re-run `git branchstack`.
 
 ## Installation
 
 `git branchstack` currently depends on an unreleased version of [git revise].
 
 ```sh
-$ pip install --user git-revise@git+https://github.com/mystor/git-revise.git@e27bc1631f5da6041c2fa7e3d1f5a9fecfb3ef57
+$ pip install --user git-revise@git+https://github.com/mystor/git-revise.git@06e9126cc9f39c48486792a25999d3b8fc1caacd
 $ pip install --user git-branchstack
 ```
+
+Instead of the last command you can also run [`./git-branchstack`](./git-branchstack) directly.
 
 ## Usage
 
@@ -76,13 +79,13 @@ first in the commit log will be added first.
 By default, when dependencies are added to generated branches, the commit
 message will include their topic tags. You can turn this off for all branches
 with the `--trim-subject` option, or for a single dependency by adding the
-`+` character before a dependency specification (like `[child:+parent]`).
+`+` character before a dependency (like `[child:+parent]`).
 
-If there is a merge conflict when applying a commit, you will be shown
-potentially missing dependencies. You can either add the missing dependencies,
-or resolve the conflict. You can tell Git to remember your conflict resolution
-by enabling `git rerere` (use `git config rerere.enabled true; git config
-rerere.autoUpdate true`).
+If a commit cannot be applied cleanly, `git branchstack` will show topics
+that would avoid the conflict if added as dependencies. You can either
+add the missing dependencies, or resolve the conflict in your editor. You
+can tell Git to remember your conflict resolution by enabling `git rerere`
+(use `git config rerere.enabled true; git config rerere.autoUpdate true`).
 
 Instead of the default topic tag delimiters (`[` and `]`), you can
 set Git configuration values `branchstack.subjectPrefixPrefix` and
