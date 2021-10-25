@@ -148,6 +148,9 @@ set of commands to achieve a similar workflow:
 - [Stacked Git](https://stacked-git.github.io/)
 - [git ps](https://github.com/uptech/git-ps)
 - [gh-stack](https://github.com/timothyandrew/gh-stack)
+- [git machete](https://github.com/VirtusLab/git-machete)
+- [git-stack](https://github.com/epage/git-stack)
+- [depot-tools](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html)
 
 Unlike its peers, `git branchstack` never modifies any worktree files,
 since it uses `git revise` internally.  This makes it faster, and avoids
