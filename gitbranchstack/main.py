@@ -254,7 +254,6 @@ def create_branch(
 ):
     head = repo.get_commit(base_commit_id)
     deps = transitive_dependencies(dependency_graph, (topic, False))
-    new_messages = []
     for commit, t, subject in commit_entries:
         if t not in deps:
             continue
@@ -285,27 +284,22 @@ def create_branch(
         global ON_CONFLICT
         ON_CONFLICT = on_conflict
         head = rebase(patch, head)
+        message = head.message
         if t == topic or trim_all_subjects or trim_subject:
-            head = head.update(message=trimmed_message(subject, patch.message))
-        new_messages += [head.message]
+            message = trimmed_message(subject, patch.message)
+        head = repo.new_commit(
+            message=message,
+            tree=head.tree(),
+            parents=head.parents(),
+            author=head.author,
+            committer=patch.committer,  # preserve original committer and timestamp
+        )
     topic_fqn = f"refs/heads/{topic}"
     if not repo.git("branch", "--list", topic):
         repo.git("branch", topic, base_commit_id)
     topic_ref = repo.get_commit_ref(topic_fqn)
 
-    old_commits = (
-        repo.git(
-            "log",
-            f"{base_commit_id}..{topic_fqn}",
-            "--reverse",
-            "--format=%H",
-        )
-        .decode()
-        .splitlines()
-    )
-    old_messages = [repo.get_commit(commit).message for commit in old_commits]
-
-    if head.tree() != topic_ref.target.tree() or new_messages != old_messages:
+    if head.oid != topic_ref.target.oid:
         topic_oid = topic_ref.target.oid
         print(f"Updating {topic_ref.name} ({topic_oid} => {head.oid})")
         topic_ref.update(head, "git-branchstack rewrite")
