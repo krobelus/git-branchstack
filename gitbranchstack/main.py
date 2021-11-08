@@ -14,7 +14,7 @@ from gitrevise.odb import Blob, Repository
 from gitrevise.merge import rebase, MergeConflict
 
 USAGE = """\
-Create branches for commits in @{upstream}..HEAD  if their commit message
+Create branches for commits in @{upstream}..HEAD if their commit message
 subject starts with [<topic>] where <topic> is the desired branch name.
 """
 
