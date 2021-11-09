@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- BREAKING: option `--trim-subject` has been dropped and is the default
+  behavior.  New option `--keep-tags` restores the old behavior. Consequently,
+  the meaning of `+` inside topic tags has been inverted.
+- Preserve committer date in created commits. This means we create
+  deterministic commit IDs, which makes it easier to reuse commits, and
+  creates fewer loose objects.
 
 ## [0.1.0] - 2021-08-29
 - BREAKING `git-branchless` was renamed to `git-branchstack` (#1).

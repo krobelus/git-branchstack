@@ -76,10 +76,10 @@ For example use `[child:parent1:parent2]` to base `child` off both `parent1`
 and `parent2`. The order of parents does not matter: the one that occurs
 first in the commit log will be added first.
 
-By default, when dependencies are added to generated branches, the commit
-message will include their topic tags. You can turn this off for all branches
-with the `--trim-subject` option, or for a single dependency by adding the
-`+` character before a dependency (like `[child:+parent]`).
+Pass `--keep-tags` to mark dependency commits by keeping the commits'
+topic tags. Use `keep-tags=all` to keep all topic tags. To only keep topic
+tags of select dependencies, prefix them with the `+` character (like
+`[child:+parent]`).
 
 If a commit cannot be applied cleanly, `git branchstack` will show topics
 that would avoid the conflict if added as dependencies. You can either

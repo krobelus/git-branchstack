@@ -124,7 +124,10 @@ def test_create_branches_carry_over_cache(repo) -> None:
 def test_create_branches_invalid_topic(repo) -> None:
     try:
         gitbranchstack.create_branches(
-            repo, "🐬", INITIAL_COMMIT, branches=("invalid-topic",)
+            repo,
+            "🐬",
+            INITIAL_COMMIT,
+            branches=("invalid-topic",),
         )
         assert False, "Expect error about missing topic"
     except gitbranchstack.TopicNotFoundError as e:
@@ -138,32 +141,32 @@ def test_create_branches_custom_range(repo) -> None:
     assert repo.git("branch", "--list", "a")
     assert not repo.git("branch", "--list", "b")
 
-def test_create_branches_remove_tags(repo) -> None:
+def test_create_branches_keep_tags_in_dependencies(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[b] subject b")
     repo.git("commit", "--allow-empty", "-m", "[a:b] subject a")
 
-    gitbranchstack.create_branches(repo, None, INITIAL_COMMIT, "HEAD")
+    gitbranchstack.create_branches(repo, None, INITIAL_COMMIT, "HEAD", keep_tags=None)
+    assert (
+        repo.git("log", "--format=%s", f"{INITIAL_COMMIT}..a").decode()
+        == "subject a\n" + "subject b"
+    )
+
+    gitbranchstack.create_branches(
+        repo, None, INITIAL_COMMIT, "HEAD", keep_tags="dependencies"
+    )
     assert (
         repo.git("log", "--format=%s", f"{INITIAL_COMMIT}..a").decode()
         == "subject a\n" + "[b] subject b"
     )
 
-    gitbranchstack.create_branches(
-        repo, None, INITIAL_COMMIT, "HEAD", trim_all_subjects=True
-    )
-    assert (
-        repo.git("log", "--format=%s", f"{INITIAL_COMMIT}..a").decode()
-        == "subject a\n" + "subject b"
-    )
-
-def test_create_branches_remove_tags_from_prefixed_parents(repo) -> None:
+def test_create_branches_keep_tags_in_prefixed_parents(repo) -> None:
     repo.git("commit", "--allow-empty", "-m", "[b] subject b")
     repo.git("commit", "--allow-empty", "-m", "[a:+b] subject a")
 
-    gitbranchstack.create_branches(repo, None, INITIAL_COMMIT, "HEAD")
+    gitbranchstack.create_branches(repo, None, INITIAL_COMMIT, "HEAD", keep_tags=None)
     assert (
         repo.git("log", "--format=%s", f"{INITIAL_COMMIT}..a").decode()
-        == "subject a\n" + "subject b"
+        == "subject a\n" + "[b] subject b"
     )
 
 def test_dwim(repo) -> None:

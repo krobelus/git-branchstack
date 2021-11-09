@@ -74,11 +74,11 @@ def parse_log(
     return commit_entries, dependency_graph
 
 def parse_parent_topic(topic: str) -> Dependency:
-    trim_subject = False
+    keep_tag = False
     if topic.startswith("+"):
         topic = topic[len("+") :]
-        trim_subject = True
-    return (topic, trim_subject)
+        keep_tag = True
+    return (topic, keep_tag)
 
 def transitive_dependencies(depgraph: Dependencies, node: Dependency) -> Dependencies:
     visited: Dependencies = {}
@@ -88,10 +88,10 @@ def transitive_dependencies(depgraph: Dependencies, node: Dependency) -> Depende
 def transitive_dependencies_rec(
     depgraph: Dependencies, node: Dependency, visited: Dependencies
 ) -> None:
-    name, trim_subject = node
+    name, keep_tag = node
     if name in visited:
         return
-    visited[name] = trim_subject
+    visited[name] = keep_tag
     if name in depgraph:
         for x in depgraph[name].items():
             transitive_dependencies_rec(depgraph, x, visited)
@@ -171,7 +171,7 @@ def create_branches(
     tip="HEAD",
     branches=None,
     force=False,
-    trim_all_subjects=False,
+    keep_tags=None,
 ) -> None:
     prefix_prefix = repo.config(
         "branchstack.subjectPrefixPrefix",
@@ -222,7 +222,7 @@ def create_branches(
                 repo,
                 prefix_prefix,
                 prefix_suffix,
-                trim_all_subjects,
+                keep_tags,
                 base_commit_id,
                 commit_entries,
                 topics,
@@ -245,7 +245,7 @@ def create_branch(
     repo,
     prefix_prefix,
     prefix_suffix,
-    trim_all_subjects,
+    keep_tags,
     base_commit_id,
     commit_entries,
     topics,
@@ -257,7 +257,7 @@ def create_branch(
     for commit, t, subject in commit_entries:
         if t not in deps:
             continue
-        trim_subject = deps[t]
+        keep_tag = deps[t]
         patch = repo.get_commit(commit)
         def on_conflict(path):
             """
@@ -285,7 +285,12 @@ def create_branch(
         ON_CONFLICT = on_conflict
         head = rebase(patch, head)
         message = head.message
-        if t == topic or trim_all_subjects or trim_subject:
+        keep_tag = (
+            keep_tag
+            or (keep_tags == "dependencies" and t != topic)
+            or keep_tags == "all"
+        )
+        if not keep_tag:
             message = trimmed_message(subject, patch.message)
         head = repo.new_commit(
             message=message,
@@ -413,17 +418,19 @@ def parser() -> argparse.ArgumentParser:
     )
 
     p.add_argument(
+        "--keep-tags",
+        "-k",
+        metavar="dependencies|all",
+        nargs="?",
+        const="dependencies",
+        help="keep topic tag on created commits",
+    )
+
+    p.add_argument(
         "--range",
         "-r",
         metavar="<rev1>..<rev2>",
         help="use commits from the given range instead of @{upstream}..",
-    )
-
-    p.add_argument(
-        "--trim-subject",
-        "-t",
-        action="store_true",
-        help="trim topic from all commit message subjects, not just leaf topics",
     )
 
     return p
@@ -445,6 +452,12 @@ def main(argv: Optional[List[str]] = None):
             else:
                 branch = None
                 base_commit, tip = parse_range(repo, args.range)
+            if args.keep_tags is not None:
+                if args.keep_tags not in ("dependencies", "all"):
+                    print(
+                        "argument to --keep-tags must be one of 'dependencies' (the default) or 'all'"
+                    )
+                    sys.exit(1)
             base_commit = repo.git("merge-base", "--", base_commit, "HEAD").decode()
             create_branches(
                 repo,
@@ -453,7 +466,7 @@ def main(argv: Optional[List[str]] = None):
                 tip,
                 getattr(args, "<topic>"),
                 force=args.force,
-                trim_all_subjects=args.trim_subject,
+                keep_tags=args.keep_tags,
             )
     except BranchWasModifiedError as err:
         print(
