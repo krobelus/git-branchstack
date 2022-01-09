@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## [0.2.0] - 2022-01-09
 - BREAKING: option `--trim-subject` has been dropped and is the default
   behavior.  New option `--keep-tags` restores the old behavior. Consequently,
   the meaning of `+` inside topic tags has been inverted.
