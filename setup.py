@@ -42,8 +42,7 @@ setup(
         "Source Code": "https://github.com/krobelus/git-branchstack/",
         "Documentation": "https://git.sr.ht/~krobelus/git-branchstack/",
     },
-    # TODO PyPI does not allow unrelease dependencies.
-    # install_requires=[
-    #     "git-revise @ git+https://github.com/mystor/git-revise.git@e27bc1631f5da6041c2fa7e3d1f5a9fecfb3ef57",
-    # ],
+    install_requires=[
+        "git-revise==0.7.0",
+    ],
 )

@@ -24,24 +24,20 @@ update the generated branches: just re-run `git branchstack`.
 
 ## Installation
 
-`git branchstack` currently depends on an unreleased version of [git revise].
-
 ### Via pip
 
 ```sh
-$ pip install --user git-revise@git+https://github.com/mystor/git-revise.git@06e9126cc9f39c48486792a25999d3b8fc1caacd
 $ pip install --user git-branchstack
 ```
 
-Instead of the last command you can also run [`./git-branchstack`](./git-branchstack) directly.
+Instead of the last command you can also run [`./git-branchstack`](./git-branchstack) directly, provided you have `git-revise>=0.7.0`.
 
 ### Via [pipx](https://pypa.github.io/pipx/)
 
 Use this instead to avoid breakage when your Python installation is upgraded.
 
 ```sh
-pipx install git-branchstack
-pipx inject git-branchstack --include-apps git-revise@git+https://github.com/mystor/git-revise.git@06e9126cc9f39c48486792a25999d3b8fc1caacd
+$ pipx install git-branchstack
 ```
 
 ## Usage
