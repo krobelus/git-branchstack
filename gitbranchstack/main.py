@@ -342,7 +342,10 @@ def override_merge_blobs(
         # No conflicts.
         return Blob(repo, merged)
 
-    path = path.relative_to("/")
+    try:
+        path = path.relative_to("/")
+    except ValueError:
+        pass
 
     # At this point, we know that there are merge conflicts to resolve.
     # Prompt to try and trigger manual resolution.
