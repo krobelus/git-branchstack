@@ -491,6 +491,7 @@ def main(argv: Optional[List[str]] = None):
     except TopicNotFoundError as err:
         topic, base_commit, tip = err.args
         print(f"error: topic '{topic}' not found {base_commit}..{tip}")
+        sys.exit(1)
     except ValueError as err:
         print(f"invalid value: {err}")
         sys.exit(1)
