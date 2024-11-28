@@ -1,5 +1,10 @@
 # git branchstack
 
+**NOTE:** This tool has some limitations, some due to incomplete design and
+others due to practical limitations in current Git implementations. I have
+switched to using [jj](https://github.com/martinvonz/jj) instead, which
+provides a cleaner and more powerful solution.
+
 [![PyPi](https://img.shields.io/pypi/v/git-branchstack.svg)](https://pypi.org/project/git-branchstack)
 
 ## Motivation
