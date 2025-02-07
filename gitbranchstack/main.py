@@ -140,10 +140,10 @@ def validate_cache(repo, topic_set, force):
 
 def update_cache(repo, topics):
     cache_path = repo.gitdir / "branchstack-cache"
-    mode = "r+" if cache_path.exists() else "w+"
+    mode = "rb+" if cache_path.exists() else "wb+"
     with open(cache_path, mode) as f:
         cached_shas = {
-            w[0]: w[1] for w in map(lambda line: line.split(), f.read().splitlines())
+            w[0]: w[1] for w in map(lambda line: line.split(), f.read().decode().splitlines())
         }
         new_topics = cached_shas
         for t in topics:
@@ -156,7 +156,7 @@ def update_cache(repo, topics):
                 new_content += f"{topic} {sha}{os.linesep}"
         f.seek(0)
         f.truncate()
-        f.write(new_content)
+        f.write(new_content.encode())
 
 def trimmed_message(subject: str, message: bytes) -> str:
     body = b"\n".join(message.split(b"\n\n", maxsplit=1)[1:])
